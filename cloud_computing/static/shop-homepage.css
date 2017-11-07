@@ -1,0 +1,22 @@
+html, body {
+    margin: 0;
+    height: 100%;
+}
+
+body {
+  padding-top: 54px;
+}
+
+.container {
+  padding-right: 10px;
+  padding-left: 10px;
+  position: relative;
+  height: auto !important;
+  min-height: 100%;
+}
+
+@media (min-width: 992px) {
+  body {
+    padding-top: 56px;
+  }
+}
