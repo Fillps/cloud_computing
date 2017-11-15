@@ -9,7 +9,14 @@ Para rodar o projeto localmente clone ou baixe o conteúdo desse repositório em
 ```bash
 mkdir env
 virtualenv env
+```
+Linux
+```bash
 source env/bin/activate
+```
+Windows
+```bash
+env/Scripts/activate
 ```
 
 Em seguida instale o projeto com edição habilitada:
@@ -20,8 +27,13 @@ pip install -e .
 
 Exporte a variável de aplicação do Flask:
 
+Linux
 ```bash
 export FLASK_APP=cloud_computing
+```
+Windows
+```bash
+setx FLASK_APP "cloud_computing\__init__.py"
 ```
 
 Inicialize o banco de dados:
