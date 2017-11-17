@@ -8,7 +8,7 @@ Para rodar o projeto localmente clone ou baixe o conteúdo desse repositório em
 
 ```bash
 mkdir env
-virtualenv env
+virtualenv -p python3 env
 source env/bin/activate
 ```
 
@@ -22,12 +22,6 @@ Exporte a variável de aplicação do Flask:
 
 ```bash
 export FLASK_APP=cloud_computing
-```
-
-Inicialize o banco de dados:
-
-```bash
-flask initdb
 ```
 
 Rode o aplicativo e acesse o endereço informado na linha de comando:
