@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
-
+import datetime
 from flask_sqlalchemy import SQLAlchemy
 from flask_security import RoleMixin, Security, \
     SQLAlchemyUserDatastore, UserMixin, utils
+from sqlalchemy import func
 
 from cloud_computing import app
 
@@ -16,6 +17,15 @@ roles_users = db.Table(
     db.Column('user_id', db.Integer(), db.ForeignKey('user.id')),
     db.Column('role_id', db.Integer(), db.ForeignKey('role.id'))
 )
+
+
+
+def get(session, model, **kwargs):
+    instance = session.query(model).filter_by(**kwargs).first()
+    if instance:
+        return instance
+    else:
+        return None
 
 
 class Role(db.Model, RoleMixin):
@@ -67,9 +77,33 @@ class Plan(db.Model):
     description = db.Column(db.String(255))
 
 
+class ResourceRequests(db.Model):
+    """Definition of ResourceRequests"""
+    id = db.Column(db.Integer(), primary_key=True)
+    message = db.Column(db.Text)
+    answer = db.Column(db.Text)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    admin_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    message_date = db.Column(db.DateTime(timezone=True), server_default=func.now())
+    answer_date = db.Column(db.DateTime(timezone=True))
+
+
+
+
 # Initialize the SQLAlchemy data store and Flask-Security
 user_datastore = SQLAlchemyUserDatastore(db, User, Role)
 security = Security(app, user_datastore)
+
+
+def get_or_create(session, model, **kwargs):
+    """Create a instance, unless they already exist returning the instance."""
+    instance = get(session, model, **kwargs)
+    if instance is not None:
+        return instance
+    else:
+        instance = model(**kwargs)
+        session.add(instance)
+        return instance
 
 
 @app.before_first_request
@@ -83,6 +117,13 @@ def before_first_request():
                                        description='Administrator')
     user_datastore.find_or_create_role(name='end-user',
                                        description='End user')
+
+    get_or_create(db.session, ResourceRequests, id=1,
+                                                message='teste',
+                                                user_id=1)
+    get_or_create(db.session, ResourceRequests, message='teste2',
+                                                user_id=1,
+                                                )
 
     # Create two Users for testing purposes -- unless they already exists
     # In each case use Flask-Security utility function to encrypt the password
