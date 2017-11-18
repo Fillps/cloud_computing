@@ -47,9 +47,11 @@ ALTER TABLE hd ADD CONSTRAINT PK_hd PRIMARY KEY (modelo);
 
 CREATE TABLE planos (
  id SERIAL NOT NULL,
+ titulo TEXT,
  preco REAL,
  tempo INT,
- publico BOOLEAN
+ publico BOOLEAN,
+ descricao TEXT
 );
 
 ALTER TABLE planos ADD CONSTRAINT PK_planos PRIMARY KEY (id);
