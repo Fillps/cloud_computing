@@ -11,7 +11,8 @@ flask-sqlalchemy = "*"
 flask-security = "*"
 flask-admin = "*"
 flask-heroku = "*"
-"psycopg2" = "*"
+psycopg2 = "*"
+gunicorn = "*"
 
 
 [requires]
