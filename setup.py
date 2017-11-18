@@ -9,6 +9,7 @@ setup(
         'flask-sqlalchemy',
         'flask-security',
         'flask-admin',
+        'flask-heroku',
     ],
     setup_requires=[
         'pytest-runner',

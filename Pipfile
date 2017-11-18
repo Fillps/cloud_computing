@@ -1,0 +1,19 @@
+[[source]]
+
+url = "https://pypi.python.org/simple"
+verify_ssl = true
+
+
+[packages]
+
+flask = "*"
+flask-sqlalchemy = "*"
+flask-security = "*"
+flask-admin = "*"
+flask-heroku = "*"
+"psycopg2" = "*"
+
+
+[requires]
+
+python_version = "3.6"
