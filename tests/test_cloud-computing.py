@@ -3,6 +3,7 @@ import tempfile
 import pytest
 from cloud_computing import cloud_computing
 
+# TODO Fix tests, still the ones from the flaskr example
 
 @pytest.fixture
 def client(request):

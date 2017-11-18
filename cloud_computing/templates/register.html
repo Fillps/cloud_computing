@@ -3,11 +3,11 @@
     <div class="container">
         <div class="space-up">
             <form class="form" action="{{ url_for_security('login') }}" role="form" method="POST" name="login_form">
-                {{ login_user_form.hidden_tag() }}
+                {{ register_user_form.hidden_tag() }}
                 <div class="row">
                     <div class="col-md-3"></div>
                     <div class="col-md-6">
-                        <h2>Faça o seu login</h2>
+                        <h2>Crie a sua conta</h2>
                         <hr>
                     </div>
                 </div>
@@ -18,7 +18,7 @@
                             <label for="user">Usuário</label>
                             <div class="input-group mb-2 mr-sm-2 mb-sm-0" id="user">
                                 <div class="input-group-addon" style="width: 2.6rem"><i class="fa fa-user"></i></div>
-                                {{ login_user_form.email(class='form-control', placeholder='usuário', required='true', autofocus='true') }}
+                                {{ register_user_form.email(class='form-control', placeholder='usuário', required='true', autofocus='true') }}
                             </div>
                         </div>
                     </div>
@@ -30,7 +30,19 @@
                             <label for="password">Senha</label>
                             <div class="input-group mb-2 mr-sm-2 mb-sm-0" id="password">
                                 <div class="input-group-addon" style="width: 2.6rem"><i class="fa fa-key"></i></div>
-                                {{ login_user_form.password(class='form-control', placeholder='senha', required='true') }}
+                                {{ register_user_form.password(class='form-control', placeholder='senha', required='true') }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-3"></div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="repeat_password">Repita a senha</label>
+                            <div class="input-group mb-2 mr-sm-2 mb-sm-0" id="repeat_password">
+                                <div class="input-group-addon" style="width: 2.6rem"><i class="fa fa-key"></i></div>
+                                {{ register_user_form.password_confirm(class='form-control', placeholder='senha', required='true') }}
                             </div>
                         </div>
                     </div>
@@ -40,11 +52,11 @@
                     <div class="col-md-6">
                         <div class="form-control-feedback">
                             <span class="text-danger align-middle">
-                                {% for error in login_user_form.email.errors %}
-                                    <p class="fa fa-close"><strong>Erro:</strong> {{ error }} </p>
+                                {% for error in register_user_form.email.errors %}
+                                    <p class="fa fa-close"><strong>Error:</strong> {{ error }} </p>
                                 {% endfor %}
-                                {% for error in login_user_form.password.errors %}
-                                    <p class="fa fa-close"><strong>Erro:</strong> {{ error }} </p>
+                                {% for error in register_user_form.password.errors %}
+                                    <p class="fa fa-close"><strong>Error:</strong> {{ error }} </p>
                                 {% endfor %}
                             </span>
                         </div>
@@ -53,25 +65,7 @@
                 <div class="row">
                     <div class="col-md-3"></div>
                     <div class="col-md-6">
-                        <div class="form-check">
-                            <label class="form-check-label">
-                                {{ login_user_form.remember }} Lembre-me
-                            </label>
-                        </div>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-3"></div>
-                    <div class="col-md-6">
-                        {{ login_user_form.submit(class='btn btn-success') }}
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-3"></div>
-                    <div class="col-md-6 mt-2">
-                        <span class="align-middle">
-                            <a href="{{ url_for_security('register') }}">Não tem conta? clique aqui e crie a sua!</a>
-                        </span>
+                        {{ register_user_form.submit(class='btn btn-success') }}
                     </div>
                 </div>
             </form>

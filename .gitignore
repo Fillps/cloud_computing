@@ -2,4 +2,7 @@ cloud_computing.db
 .eggs/
 env/
 cloud_computing.egg-info/
+__pycache__/
+.idea/
+*.pyc
 
