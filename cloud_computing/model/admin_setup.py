@@ -1,15 +1,16 @@
 # -*- coding: utf-8 -*-
 from flask_admin.contrib.sqla import validators
+from flask_admin.form import rules
 from flask_security import current_user, utils
 from flask_admin import Admin
 from flask_admin.contrib import sqla
 from sqlalchemy import func, or_
-from wtforms import Label
+from wtforms import Label, ValidationError
 from wtforms.fields import PasswordField, TextAreaField
 
 from cloud_computing import app
 from cloud_computing.model.db_setup import db, User, Role, Plan, ResourceRequests
-from cloud_computing.model.util import ReadonlyTextField
+from cloud_computing.model.util import ReadonlyCKTextAreaField, CKTextAreaField
 
 
 class UserAdmin(sqla.ModelView):
@@ -82,28 +83,41 @@ class PlanAdmin(sqla.ModelView):
 
 class ResourceRequestsAdmin(sqla.ModelView):
     """Customized ResourceRequests model for SQL-Admin."""
-    form_excluded_columns = ('message_date', 'answer_date',)
+    column_list = ('id', 'user_id', 'message', 'message_date')
+    form_columns = ('message', 'answer')
 
-    # Admin cannot delete requests, only answer them.
+    # Admin cannot delete or create requests, only answer them.
     can_delete = False
     can_create = False
 
-    # Message cannot be changed.
+    # CKeditor - Text editor for the answer
+    extra_js = ['//cdn.ckeditor.com/4.6.0/standard/ckeditor.js']
+
     form_overrides = {
-        'message': ReadonlyTextField
+        # Message cannot be changed.
+        'message': ReadonlyCKTextAreaField,
+        'answer': CKTextAreaField
+    }
+
+    def _description_formatter(view, context, model, name):
+        """Format the column with 100 characters."""
+        if len(model.message)>100:
+            return model.message[:100]+'...'
+        else:
+            return model.message
+
+    # format the column message with 100 characters.
+    column_formatters = {
+        'message': _description_formatter
     }
 
     def get_count_query(self):
         """Count of the requests without answers."""
-        return self.session.query(func.count(ResourceRequests.admin_id == None)).select_from(self.model)
+        return self.session.query(func.count(ResourceRequests.id)).filter(ResourceRequests.admin_id == None)
 
     def get_query(self):
         """Select only the requests without answers."""
         return super(ResourceRequestsAdmin, self).get_query().filter(ResourceRequests.admin_id == None)
-
-    def scaffold_list_columns(self):
-        """Select the columns to be displayed."""
-        return ['id', 'user_id', 'message', 'answer', 'message_date', 'answer_date']
 
     def on_model_change(self, form, model, is_created):
         """Check if the answer is empty. If is empty, raise an error.
