@@ -19,7 +19,6 @@ roles_users = db.Table(
 )
 
 
-
 def get(session, model, **kwargs):
     instance = session.query(model).filter_by(**kwargs).first()
     if instance:
@@ -57,8 +56,8 @@ class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(255), unique=True)
     password = db.Column(db.String(255))
-    active = db.Column(db.Boolean())
-    confirmed_at = db.Column(db.DateTime())
+    active = db.Column(db.Boolean(), server_default='true')
+    confirmed_at = db.Column(db.DateTime(), server_default=func.now())
     roles = db.relationship(
         'Role',
         secondary=roles_users,
@@ -80,14 +79,12 @@ class Plan(db.Model):
 class ResourceRequests(db.Model):
     """Definition of ResourceRequests"""
     id = db.Column(db.Integer(), primary_key=True)
-    message = db.Column(db.Text)
+    message = db.Column(db.Text, nullable=False)
     answer = db.Column(db.Text)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     admin_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     message_date = db.Column(db.DateTime(timezone=True), server_default=func.now())
     answer_date = db.Column(db.DateTime(timezone=True))
-
-
 
 
 # Initialize the SQLAlchemy data store and Flask-Security
@@ -98,12 +95,10 @@ security = Security(app, user_datastore)
 def get_or_create(session, model, **kwargs):
     """Create a instance, unless they already exist returning the instance."""
     instance = get(session, model, **kwargs)
-    if instance is not None:
-        return instance
-    else:
+    if instance is None:
         instance = model(**kwargs)
         session.add(instance)
-        return instance
+    return instance
 
 
 @app.before_first_request
@@ -118,26 +113,31 @@ def before_first_request():
     user_datastore.find_or_create_role(name='end-user',
                                        description='End user')
 
-    get_or_create(db.session, ResourceRequests, id=1,
-                                                message='teste',
-                                                user_id=1)
-    get_or_create(db.session, ResourceRequests, message='teste2',
-                                                user_id=1,
-                                                )
-
     # Create two Users for testing purposes -- unless they already exists
     # In each case use Flask-Security utility function to encrypt the password
     encrypted_password = utils.hash_password('password')
+
     if not user_datastore.get_user('someone@example.com'):
-        user_datastore.create_user(email='someone@example.com',
+        user_datastore.create_user(id=1,
+                                   email='someone@example.com',
                                    password=encrypted_password)
     if not user_datastore.get_user('admin@example.com'):
-        user_datastore.create_user(email='admin@example.com',
+        user_datastore.create_user(id=2,
+                                   email='admin@example.com',
                                    password=encrypted_password)
 
     # Commit any database changes
     # The User and Roles must exist before we can add a Role to the User
     db.session.commit()
+
+    # Set example of resource requests
+    get_or_create(db.session, ResourceRequests, message='Hakjshdalksjhdlakjshdlakjshdalksjhdalksjhdlakjshdalkjshdakljs'
+                                                        'hdaklsjdhalksjdhakljshdlakjshdalksjhdalkjshdalkjlkshdakljsdha'
+                                                        'klsjhdakljshdakljshdakljshdalkjshdlkajshdalksjdhalksjdhalkjsh'
+                                                        'dalkjshfiuohgsdpoifughsdpfiouhapdsoifjsodigjdpfoigjhsdpofighd'
+                                                        'fgjasihdklajshdaskljdhalskdjhaskldjhaklsjdhalksjdhalkjshdlkaj',
+                                                        user_id=1)
+    get_or_create(db.session, ResourceRequests, message='teste2', user_id=1)
 
     # Set example users roles
     user_datastore.add_role_to_user('someone@example.com', 'end-user')
