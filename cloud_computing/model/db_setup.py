@@ -131,11 +131,11 @@ def before_first_request():
     db.session.commit()
 
     # Set example of resource requests
-    get_or_create(db.session, ResourceRequests, message='Hakjshdalksjhdlakjshdlakjshdalksjhdalksjhdlakjshdalkjshdakljs'
-                                                        'hdaklsjdhalksjdhakljshdlakjshdalksjhdalkjshdalkjlkshdakljsdha'
-                                                        'klsjhdakljshdakljshdakljshdalkjshdlkajshdalksjdhalksjdhalkjsh'
-                                                        'dalkjshfiuohgsdpoifughsdpfiouhapdsoifjsodigjdpfoigjhsdpofighd'
-                                                        'fgjasihdklajshdaskljdhalskdjhaskldjhaklsjdhalksjdhalkjshdlkaj',
+    get_or_create(db.session, ResourceRequests, message='Hakjshdalksjh dlakjs hd lakjshda lksjhdadla kjshdal kjshdakljs'
+                                                        'hdaklsjdhalk sjdhakljshdlakjshda lksjhdashdal kjlksh dakljsdha'
+                                                        'klsjhdakljshdakljshdakl jshdalkdlkaj shdalksj dhalksj dhalkjsh'
+                                                        'dalkjshfiu ohgsdpoifug hsdpfiouds oifjsodigjdpfoig jhsdpofighd'
+                                                        'fgjasihdkla jshdaskljhalsk djhdjh aklsjdha lksjdhalkjs hlkaaj',
                                                         user_id=1)
     get_or_create(db.session, ResourceRequests, message='teste2', user_id=1)
 
