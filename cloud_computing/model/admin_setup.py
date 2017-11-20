@@ -1,21 +1,27 @@
 # -*- coding: utf-8 -*-
-
 from flask import flash, request
 from flask_admin.babel import gettext
 from flask_admin.contrib.sqla import validators
 from flask_admin.helpers import get_redirect_target
 from flask_admin.model.helpers import get_mdict_item_or_list
+
 from flask_security import current_user, utils
 from flask_admin import Admin, expose
 from flask_admin.contrib import sqla
 from markupsafe import Markup
+
 from sqlalchemy import func
 from werkzeug.utils import redirect
+
 from wtforms.fields import PasswordField
 
 from cloud_computing import app
 from cloud_computing.model.db_setup import db, User, Role, Plan, ResourceRequests
 from cloud_computing.model.util import ReadonlyCKTextAreaField, CKTextAreaField
+
+
+MAX_LEN_REQUEST_RESOURCES_ADMIN = 100
+MAX_LEN_REQUEST_RESOURCES_USER = 50
 
 
 class UserAdmin(sqla.ModelView):
@@ -106,8 +112,8 @@ class ResourceRequestsAdmin(sqla.ModelView):
 
     def _message_formatter(view, context, model, name):
         """Format the column with 100 characters."""
-        if len(model.message)>100:
-            return Markup(model.message[:100])+'...'
+        if len(model.message)>MAX_LEN_REQUEST_RESOURCES_ADMIN:
+            return Markup(model.message[:MAX_LEN_REQUEST_RESOURCES_ADMIN]) + '...'
         else:
             return Markup(model.message)
 
@@ -150,15 +156,14 @@ class ResourceRequestsAdmin(sqla.ModelView):
 
 class ResourceRequestsUser(sqla.ModelView):
     """Customized ResourceRequests model for SQL-Admin."""
-    #TODO colocar limite max nas colunas - https://stackoverflow.com/questions/41072317/reducing-size-of-columns-in-flask-admin
-    # Admin cannot delete requests, only create and view them.
+    
+    # user cannot delete requests, only create and view them.
     can_delete = False
     can_edit = False
     can_view_details = True
 
     column_list = ('id', 'message_date', 'message', 'answer_date', 'answer')
     column_details_list = ('id', 'message_date', 'message', 'answer_date', 'answer')
-    # tive q colocar assim pq nao aceitava colocar: form_columns = ('message')
     form_excluded_columns = ('message_date', 'answer_date', 'answer', 'id')
 
     # CKeditor - Text editor for the answer
@@ -166,6 +171,47 @@ class ResourceRequestsUser(sqla.ModelView):
 
     form_overrides = {
         'message': CKTextAreaField,
+    }
+
+    def _message_formatter(view, context, model, name):
+        if model.message is not None and len(model.message) > MAX_LEN_REQUEST_RESOURCES_USER:
+            return Markup(model.message[:MAX_LEN_REQUEST_RESOURCES_USER]) + '...'
+        return Markup(model.message)
+
+    def _answer_formatter(view, context, model, name):
+        if model.answer is not None and len(model.answer) > MAX_LEN_REQUEST_RESOURCES_USER:
+            return Markup(model.answer[:MAX_LEN_REQUEST_RESOURCES_USER]) + '...'
+        return Markup(model.answer)
+
+    def _message_formatter_details(view, context, model, name):
+        return Markup(model.message)
+
+    def _answer_formatter_details(view, context, model, name):
+        return Markup(model.answer)
+
+    def _message_date_formatter(view, context, model, name):
+        if model.message_date is not None:
+            return model.message_date.strftime('%d/%m/%Y %H:%M:%S')
+        return model.message_date
+
+    def _answer_date_formatter(view, context, model, name):
+        if model.answer_date is not None:
+            return model.answer_date.strftime('%d/%m/%Y %H:%M:%S')
+        return model.answer_date
+
+    column_formatters = {
+        'message': _message_formatter,
+        'answer': _answer_formatter,
+        'message_date': _message_date_formatter,
+        'answer_date': _answer_date_formatter
+    }
+
+    # using the export format in the details_view
+    column_formatters_export = {
+        'message': _message_formatter_details,
+        'answer': _answer_formatter_details,
+        'message_date': _message_date_formatter,
+        'answer_date': _answer_date_formatter
     }
 
     @expose('/details/')
@@ -202,58 +248,17 @@ class ResourceRequestsUser(sqla.ModelView):
                            get_value=self.get_export_value,
                            return_url=return_url)
 
-    def _message_formatter(view, context, model, name):
-        if model.message is not None and len(model.message) > 50:
-            return Markup(model.message[:50])+'...'
-        return Markup(model.message)
-
-    def _answer_formatter(view, context, model, name):
-        if model.answer is not None and len(model.answer) > 50:
-            return Markup(model.answer[:50])+'...'
-        return Markup(model.answer)
-
-    def _message_formatter_details(view, context, model, name):
-        return Markup(model.message)
-
-    def _answer_formatter_details(view, context, model, name):
-        return Markup(model.answer)
-
-    def _message_date_formatter(view, context, model, name):
-        if model.message_date is not None:
-            return model.message_date.strftime('%d/%m/%Y %H:%M:%S')
-        return model.message_date
-
-    def _answer_date_formatter(view, context, model, name):
-        if model.answer_date is not None:
-            return model.answer_date.strftime('%d/%m/%Y %H:%M:%S')
-        return model.answer_date
-
-    column_formatters = {
-        'message': _message_formatter,
-        'answer': _answer_formatter,
-        'message_date': _message_date_formatter,
-        'answer_date': _answer_date_formatter
-    }
-
-    # using the export format in the details
-    column_formatters_export = {
-        'message': _message_formatter_details,
-        'answer': _answer_formatter_details,
-        'message_date': _message_date_formatter,
-        'answer_date': _answer_date_formatter
-    }
-
     def get_count_query(self):
-        """Count of the requests without answers."""
+        """Count of the requests with the user_id equal to the current user."""
         return self.session.query(func.count(ResourceRequests.id)).filter(ResourceRequests.user_id == current_user.id)
 
     def get_query(self):
-        """Select only the requests without answers."""
+        """Select only the requests with the user_id equal to the current user."""
         return super(ResourceRequestsUser, self).get_query().filter(ResourceRequests.user_id == current_user.id)
 
     def on_model_change(self, form, model, is_created):
-        """Check if the answer is empty. If is empty, raise an error.
-        If is not empty save to the DB, updating the answer, admin_id and answer_date.
+        """Check if the message is empty. If is empty, raise an error.
+        If is not empty save to the DB, creating a new resource request.
         """
         if len(model.message):
             model.user_id = current_user.id
@@ -263,7 +268,7 @@ class ResourceRequestsUser(sqla.ModelView):
 
     def is_accessible(self):
         """Prevent administration of ResourceRequests unless the currently
-        logged-in user has the "admin" role.
+        logged-in user has the "end-user" role.
         """
         return current_user.has_role('end-user')
 
