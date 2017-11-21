@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from cloud_computing import app
-from cloud_computing.model.db_setup import Plan
+from cloud_computing.model.models import Plan
 from flask import render_template
 
 
