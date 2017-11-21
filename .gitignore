@@ -1,8 +1,9 @@
-cloud_computing.db
+**/cloud_computing.db
 .eggs/
 env/
 cloud_computing.egg-info/
-__pycache__/
-.idea/
-*.pyc
+**/__pycache__/
+**/.idea/
+**/*.pyc
+*.lock
 
