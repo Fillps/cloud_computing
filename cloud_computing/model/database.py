@@ -32,7 +32,6 @@ def get_or_create(session, model, **kwargs):
 
 @app.before_first_request
 def before_first_request():
-    """Creates test data before the app runs, should not go to production."""
     # Create any database tables that don't exist yet
     db.create_all()
 
@@ -60,10 +59,13 @@ def before_first_request():
     db.session.commit()
 
     # Set example of resource requests
-    get_or_create(db.session, ResourceRequests, message='Teste de requisição de recurso',
+    get_or_create(db.session, ResourceRequests, message='Hakjshdalksjh dlakjs hd lakjshda lksjhdadla kjshdal kjshdakljs'
+                                                        'hdaklsjdhalk sjdhakljshdlakjshda lksjhdashdal kjlksh dakljsdha'
+                                                        'klsjhdakljshdakljshdakl jshdalkdlkaj shdalksj dhalksj dhalkjsh'
+                                                        'dalkjshfiu ohgsdpoifug hsdpfiouds oifjsodigjdpfoig jhsdpofighd'
+                                                        'fgjasihdkla jshdaskljhalsk djhdjh aklsjdha lksjdhalkjs hlkaaj',
                   user_id=1)
-    get_or_create(db.session, ResourceRequests, message='Teste de requisição de recurso 2',
-                  user_id=1)
+    get_or_create(db.session, ResourceRequests, message='teste2', user_id=1)
 
     # Set example users roles
     user_datastore.add_role_to_user('someone@example.com', 'end-user')
