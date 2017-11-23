@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from flask import flash, request
+from flask import flash, request, current_app as app
 from flask_admin import Admin, expose
 from flask_admin.babel import gettext
 from flask_admin.contrib import sqla
@@ -13,7 +13,7 @@ from sqlalchemy import func
 from werkzeug.utils import redirect
 from wtforms.fields import PasswordField
 
-from cloud_computing import app
+
 from cloud_computing.model.models import db, User, Role, Plan, ResourceRequests
 from cloud_computing.utils.util import ReadonlyCKTextAreaField, CKTextAreaField
 
@@ -270,18 +270,3 @@ class ResourceRequestsUser(sqla.ModelView):
         return current_user.has_role('end-user')
 
 
-# Initialize Flask-Admin
-admin = Admin(
-    app,
-    'Management',
-    base_template='admin.html',
-    template_mode='bootstrap3',
-    url='/manage'
-)
-
-# Add Flask-Admin views for Users and Roles
-admin.add_view(UserAdmin(User, db.session))
-admin.add_view(RoleAdmin(Role, db.session))
-admin.add_view(PlanAdmin(Plan, db.session))
-admin.add_view(ResourceRequestsAdmin(ResourceRequests, db.session, endpoint='resource-requests-admin'))
-admin.add_view(ResourceRequestsUser(ResourceRequests, db.session, endpoint='resource-requests-user'))

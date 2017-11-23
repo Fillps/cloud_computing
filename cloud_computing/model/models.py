@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-from flask_security import RoleMixin, UserMixin
+from flask import current_app as app
+from flask_security import RoleMixin, UserMixin, SQLAlchemyUserDatastore, Security
 from sqlalchemy import func
 from cloud_computing.model.database import db
 
