@@ -21,3 +21,8 @@ Para rodar localmente sem o [heroku](https://devcenter.heroku.com/articles/herok
 export DATABASE_URL=postgres://smpsmnkhtfugpw:d70650378be28a64671e1d5cc320ac7189a1bbcd7a3566c1d5022cd8ed875b5f@ec2-54-235-90-125.compute-1.amazonaws.com:5432/d4o6b2ii9q94ip
 python runserver.py
 ```
+
+# Problemas conhecidos
+
+1. Após o cadastro o novo usuário não recebe uma classificação, portanto não consegue acessar itens de usuário na interface de administração do sistema.
+2. Os testes unitários presentes no momento não correspondem ao projeto atual mas ao projeto base utilizado. Novos testes devem ser desenvolvidos para este sistema.
