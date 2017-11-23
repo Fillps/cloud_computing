@@ -1,24 +1,21 @@
 # -*- coding: utf-8 -*-
 from flask import flash, request
+from flask_admin import Admin, expose
 from flask_admin.babel import gettext
+from flask_admin.contrib import sqla
 from flask_admin.contrib.sqla import validators
+from flask_admin.form import rules
 from flask_admin.helpers import get_redirect_target
 from flask_admin.model.helpers import get_mdict_item_or_list
-
 from flask_security import current_user, utils
-from flask_admin import Admin, expose
-from flask_admin.contrib import sqla
 from markupsafe import Markup
-
 from sqlalchemy import func
 from werkzeug.utils import redirect
-
 from wtforms.fields import PasswordField
 
 from cloud_computing import app
-from cloud_computing.model.db_setup import db, User, Role, Plan, ResourceRequests
-from cloud_computing.model.util import ReadonlyCKTextAreaField, CKTextAreaField
-
+from cloud_computing.model.models import db, User, Role, Plan, ResourceRequests
+from cloud_computing.utils.util import ReadonlyCKTextAreaField, CKTextAreaField
 
 MAX_LEN_REQUEST_RESOURCES_ADMIN = 100
 MAX_LEN_REQUEST_RESOURCES_USER = 50
@@ -156,7 +153,7 @@ class ResourceRequestsAdmin(sqla.ModelView):
 
 class ResourceRequestsUser(sqla.ModelView):
     """Customized ResourceRequests model for SQL-Admin."""
-    
+
     # user cannot delete requests, only create and view them.
     can_delete = False
     can_edit = False

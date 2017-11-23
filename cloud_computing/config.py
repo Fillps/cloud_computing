@@ -10,7 +10,6 @@ SECRET_KEY = '\xfb\x13\xdf\xa1@i\xd6>V\xc0\xbf\x8fp\x16#Z\x0b\x81\xeb\x16'
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 # Flask-Security config
-SECURITY_URL_PREFIX = "/admin"
 SECURITY_PASSWORD_HASH = "pbkdf2_sha512"
 SECURITY_PASSWORD_SALT = "B0E809D91551B3982AFE66F5BDE732531C7E3AEFA8874A17379ABF05985FB242"
 
