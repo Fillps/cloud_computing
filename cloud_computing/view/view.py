@@ -2,16 +2,16 @@
 from flask import Blueprint, current_app, render_template
 from cloud_computing.controller.controller import Controller
 
-route_blueprint = Blueprint('home', __name__, url_prefix='')
+default_blueprint = Blueprint('default', __name__)
 
-@route_blueprint.route('/')
+@default_blueprint.route('/')
 def show_homescreen():
     """Shows the homescreen."""
     plans = Controller.get_plans()
-    return render_template(current_app.config['shop-homepage.html'], plans)
+    return render_template('shop-homepage.html', plans=plans)
 
 
-@route_blueprint.route('/<item_name>')
+@default_blueprint.route('/<item_name>')
 def show_item(item_name):
     """Shows the item detail page."""
     plan = Controller.get_plan_by_item_name(item_name)

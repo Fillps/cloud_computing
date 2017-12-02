@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
-from flask import current_app as app
+from flask_security import SQLAlchemyUserDatastore, Security
 from flask_sqlalchemy import SQLAlchemy
-from flask_security import utils
 
 db = SQLAlchemy()
-user_datastore = None
+
+from cloud_computing.model.models import User, Role
+user_datastore = SQLAlchemyUserDatastore(db, User, Role)
 security = None
+
 
 def get_or_create(session, model, **kwargs):
     """Create a instance, unless they already exist. Returns the created or found instance."""
