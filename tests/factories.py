@@ -15,9 +15,13 @@ class RoleFactory(SQLAlchemyModelFactory):
 
 
 class UserFactory(SQLAlchemyModelFactory):
-
     id = factory.Sequence(lambda x: x)
+    name = factory.Sequence(lambda x: x)
+    last_name = factory.Sequence(lambda x: x)
     email = lazy_attribute(lambda x: str(x.id) + "@example.com")
+    cpf = None
+    cnpj = None
+    company = None
     password = factory.Sequence(lambda x: x)
     active = True
     confirmed_at = datetime.datetime.now()

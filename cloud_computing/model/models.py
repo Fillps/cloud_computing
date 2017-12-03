@@ -40,10 +40,16 @@ class User(db.Model, UserMixin):
     or multiple roles.
     """
     id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(255), unique=True)
-    password = db.Column(db.String(255))
+    name = db.Column(db.Text, nullable=False)
+    last_name = db.Column(db.Text, nullable=False)
+    email = db.Column(db.Text, unique=True, nullable=False)
+    cpf = db.Column(db.String(11))
+    cnpj = db.Column(db.String(14))
+    company = db.Column(db.Text)
+    password = db.Column(db.Text, nullable=False)
     active = db.Column(db.Boolean(), server_default='true')
     confirmed_at = db.Column(db.DateTime(), server_default=func.now())
+
     roles = db.relationship(
         'Role',
         secondary=roles_users,

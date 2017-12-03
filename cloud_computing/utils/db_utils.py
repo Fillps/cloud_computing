@@ -2,7 +2,7 @@
 from flask_security import utils
 
 from cloud_computing.model.database import db, user_datastore, get_or_create
-from cloud_computing.model.models import ResourceRequests, Plan
+from cloud_computing.model.models import *
 
 
 def setup_database(app):
@@ -22,12 +22,19 @@ def setup_database(app):
         # In each case use Flask-Security utility function to encrypt the password
         encrypted_password = utils.hash_password('password')
 
-        if not user_datastore.get_user('someone@example.com'):
+        if user_datastore.find_user(id=1, email='someone@example.com') is None:
             user_datastore.create_user(id=1,
+                                       name='someone',
+                                       last_name='example',
+                                       cpf='00099988877',
                                        email='someone@example.com',
                                        password=encrypted_password)
-        if not user_datastore.get_user('admin@example.com'):
+
+        if user_datastore.find_user(id=2, email='admin@example.com') is None:
             user_datastore.create_user(id=2,
+                                       name='admin',
+                                       last_name='example',
+                                       cpf='00099988878',
                                        email='admin@example.com',
                                        password=encrypted_password)
 

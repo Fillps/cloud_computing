@@ -3,6 +3,8 @@ from flask import Flask
 from flask_admin import Admin
 from flask_heroku import Heroku
 
+from cloud_computing.model.database import db, user_datastore
+
 
 def create_app(config_filename='../configs/production.py'):
     """Initialize Flask"""
@@ -32,31 +34,41 @@ def config_flask_admin(app):
     )
 
     # Add Flask-Admin views for Users and Roles
-    from cloud_computing.model.database import db
     from cloud_computing.model import models
-    from cloud_computing.view import admin as _adm
+    from cloud_computing.view import admin as _adm, end_user as _user
 
     admin.add_view(_adm.UserAdmin(models.User, db.session))
     admin.add_view(_adm.RoleAdmin(models.Role, db.session))
     admin.add_view(_adm.PlanAdmin(models.Plan, db.session))
     admin.add_view(_adm.ResourceRequestsAdmin(models.ResourceRequests, db.session, endpoint='resource-requests-admin'))
-    admin.add_view(_adm.ResourceRequestsUser(models.ResourceRequests, db.session, endpoint='resource-requests-user'))
+
+    admin.add_view(_user.ResourceRequestsUser(models.ResourceRequests, db.session, endpoint='resource-requests-user'))
     return admin
 
 
 def config_database(app):
-    from cloud_computing.utils import db_utils
-    from cloud_computing.model.database import db, user_datastore, security
-    from cloud_computing.model.models import User, Role
-    from flask_security import SQLAlchemyUserDatastore
-    from flask_security import Security
 
     db.init_app(app)
+    config_flask_security(app)
 
-    # Initialize Flask-Security
-    security = Security(app, user_datastore)
-
+    from cloud_computing.utils import db_utils
     db_utils.setup_database(app)
+
+
+def config_flask_security(app):
+    # Initialize Flask-Security
+    from flask_security import Security
+    from cloud_computing.view.security import ExtendedRegisterForm
+    Security(app, user_datastore, register_form=ExtendedRegisterForm)
+
+    from flask_security import user_registered
+
+    @user_registered.connect_via(app)
+    def user_registered_sighandler(sender, **extra):
+        user = extra.get('user')
+        role = user_datastore.find_or_create_role('end-user')
+        user_datastore.add_role_to_user(user, role)
+        db.session.commit()
 
 
 def config_blueprints(app):

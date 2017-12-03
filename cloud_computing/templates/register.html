@@ -15,10 +15,70 @@
                     <div class="col-md-3"></div>
                     <div class="col-md-6">
                         <div class="form-group has-danger">
-                            <label for="user">Usuário</label>
+                            <label for="user">Nome</label>
                             <div class="input-group mb-2 mr-sm-2 mb-sm-0" id="user">
                                 <div class="input-group-addon" style="width: 2.6rem"><i class="fa fa-user"></i></div>
-                                {{ register_user_form.email(class='form-control', placeholder='usuário', required='true', autofocus='true') }}
+                                {{ register_user_form.name(class='form-control', placeholder='nome', required='true', autofocus='true') }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-3"></div>
+                    <div class="col-md-6">
+                        <div class="form-group has-danger">
+                            <label for="user">Sobrenome</label>
+                            <div class="input-group mb-2 mr-sm-2 mb-sm-0" id="user">
+                                <div class="input-group-addon" style="width: 2.6rem"><i class="fa fa-user"></i></div>
+                                {{ register_user_form.last_name(class='form-control', placeholder='sobrenome', required='true', autofocus='true') }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-3"></div>
+                    <div class="col-md-6">
+                        <div class="form-group has-danger">
+                            <label for="user">Email</label>
+                            <div class="input-group mb-2 mr-sm-2 mb-sm-0" id="user">
+                                <div class="input-group-addon" style="width: 2.6rem"><i class="fa fa-user"></i></div>
+                                {{ register_user_form.email(class='form-control', placeholder='email', required='true', autofocus='true') }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-3"></div>
+                    <div class="col-md-6">
+                        <div class="form-group has-danger">
+                            <label for="user">CPF</label>
+                            <div class="input-group mb-2 mr-sm-2 mb-sm-0" id="user">
+                                <div class="input-group-addon" style="width: 2.6rem"><i class="fa fa-user"></i></div>
+                                {{ register_user_form.cpf(class='form-control', placeholder='cpf', optional='true', autofocus='true') }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-3"></div>
+                    <div class="col-md-6">
+                        <div class="form-group has-danger">
+                            <label for="user">CNPJ</label>
+                            <div class="input-group mb-2 mr-sm-2 mb-sm-0" id="user">
+                                <div class="input-group-addon" style="width: 2.6rem"><i class="fa fa-user"></i></div>
+                                {{ register_user_form.cnpj(class='form-control', placeholder='cnpj', optional='true', autofocus='true') }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-3"></div>
+                    <div class="col-md-6">
+                        <div class="form-group has-danger">
+                            <label for="user">Empresa</label>
+                            <div class="input-group mb-2 mr-sm-2 mb-sm-0" id="user">
+                                <div class="input-group-addon" style="width: 2.6rem"><i class="fa fa-user"></i></div>
+                                {{ register_user_form.company(class='form-control', placeholder='empresa', optional='true', autofocus='true') }}
                             </div>
                         </div>
                     </div>
@@ -52,6 +112,21 @@
                     <div class="col-md-6">
                         <div class="form-control-feedback">
                             <span class="text-danger align-middle">
+                                {% for error in register_user_form.name.errors %}
+                                    <p class="fa fa-close"><strong>Error:</strong> {{ error }} </p>
+                                {% endfor %}
+                                {% for error in register_user_form.last_name.errors %}
+                                    <p class="fa fa-close"><strong>Error:</strong> {{ error }} </p>
+                                {% endfor %}
+                                {% for error in register_user_form.cpf.errors %}
+                                    <p class="fa fa-close"><strong>Error:</strong> {{ error }} </p>
+                                {% endfor %}
+                                {% for error in register_user_form.cnpj.errors %}
+                                    <p class="fa fa-close"><strong>Error:</strong> {{ error }} </p>
+                                {% endfor %}
+                                {% for error in register_user_form.company.errors %}
+                                    <p class="fa fa-close"><strong>Error:</strong> {{ error }} </p>
+                                {% endfor %}
                                 {% for error in register_user_form.email.errors %}
                                     <p class="fa fa-close"><strong>Error:</strong> {{ error }} </p>
                                 {% endfor %}

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from flask import Blueprint, current_app, render_template
+from flask import Blueprint, render_template
 from cloud_computing.controller.controller import Controller
 
 default_blueprint = Blueprint('default', __name__)
