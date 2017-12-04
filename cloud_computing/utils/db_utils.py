@@ -10,7 +10,6 @@ def setup_database(app):
 
     # Create any database tables that don't exist yet
     with app.app_context():
-        db.drop_all()
         db.create_all()
 
         # Create the Roles "admin" and "end-user" -- unless they already exist
