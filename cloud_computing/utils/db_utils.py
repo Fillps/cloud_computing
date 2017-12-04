@@ -10,6 +10,7 @@ def setup_database(app):
 
     # Create any database tables that don't exist yet
     with app.app_context():
+        db.drop_all()
         db.create_all()
 
         # Create the Roles "admin" and "end-user" -- unless they already exist
@@ -38,6 +39,55 @@ def setup_database(app):
                                        email='admin@example.com',
                                        password=encrypted_password)
 
+        get_or_create(db.session, Os, name='Windows')
+        get_or_create(db.session, Os, name='Linux')
+        get_or_create(db.session, Cpu,
+                      model="CPU 2 Cores 2.0",
+                      cores=2,
+                      frequency=2.0,
+                      price=3.99,
+                      total=10)
+        get_or_create(db.session, Cpu,
+                      model="CPU 4 Cores 2.0",
+                      cores=4,
+                      frequency=2.0,
+                      price=5.99,
+                      total=10)
+
+        get_or_create(db.session, Gpu,
+                      model="GPU 4GB 2.0",
+                      ram=4,
+                      frequency=2.0,
+                      price=3.99,
+                      total=10)
+
+        get_or_create(db.session, Gpu,
+                      model="GPU 8GB 2.0",
+                      ram=8,
+                      frequency=2.0,
+                      price=5.99,
+                      total=10)
+        get_or_create(db.session, Ram,
+                      model="RAM 8GB",
+                      capacity=8,
+                      price=3.99,
+                      total=10)
+        get_or_create(db.session, Ram,
+                      model="RAM 4GB",
+                      capacity=4,
+                      price=2.99,
+                      total=10)
+        get_or_create(db.session, Hd,
+                      model="HD 100GB",
+                      capacity=100,
+                      price=3.99,
+                      total=10)
+        get_or_create(db.session, Hd,
+                      model="HD 500GB",
+                      capacity=500,
+                      price=5.99,
+                      total=10)
+
         # Commit any database changes
         # The User and Roles must exist before we can add a Role to the User
         db.session.commit()
@@ -54,20 +104,29 @@ def setup_database(app):
         db.session.commit()
 
         # Create first test plans if they don't exist
-        if not Plan.query.filter_by(title='Plano básico').first():
-            basic_plan = Plan(title='Plano básico', price=19.99,
-                              description='Descrição do plano básico')
-            db.session.add(basic_plan)
+        get_or_create(db.session, Plan,
+                      title='Plano básico',
+                      price=19.99,
+                      description='Descrição do plano básico',
+                      is_public=True,
+                      cpu_model='CPU 2 Cores 2.0',
+                      os_name='Linux')
 
-        if not Plan.query.filter_by(title='Plano intermediário').first():
-            intermediate_plan = Plan(title='Plano intermediário', price=29.99,
-                                     description='Descrição do plano intermediário')
-            db.session.add(intermediate_plan)
+        get_or_create(db.session, Plan,
+                      title='Plano intermediário',
+                      price=29.99,
+                      description='Descrição do plano intermediário',
+                      is_public=True,
+                      cpu_model='CPU 4 Cores 2.0',
+                      os_name='Linux')
 
-        if not Plan.query.filter_by(title='Plano avançado').first():
-            advanced_plan = Plan(title='Plano avançado', price=49.99,
-                                 description='Descrição do plano avançado')
-            db.session.add(advanced_plan)
+        get_or_create(db.session, Plan,
+                      title='Plano avançado',
+                      price=39.99,
+                      description='Descrição do plano avançado',
+                      is_public=True,
+                      cpu_model='CPU 4 Cores 2.0',
+                      os_name='Linux')
 
         # Commit changes
         db.session.commit()

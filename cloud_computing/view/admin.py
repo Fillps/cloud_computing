@@ -73,6 +73,8 @@ class RoleAdmin(sqla.ModelView):
 
 class PlanAdmin(sqla.ModelView):
     """Customized Plan model for SQL-Admin."""
+    column_list = ('title', 'price', 'description', 'is_public', 'cpu', 'gpus', 'rams', 'hds', 'os')
+    form_columns = column_list
 
     def is_accessible(self):
         """Prevent administration of Plans unless the currently
