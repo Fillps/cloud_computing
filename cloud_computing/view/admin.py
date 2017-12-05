@@ -4,11 +4,11 @@ from flask_admin.contrib.sqla import validators
 from flask_security import current_user, utils
 from markupsafe import Markup
 from sqlalchemy import func
-from wtforms.fields import PasswordField
-
+from wtforms import ValidationError, DecimalField
+from wtforms.fields import PasswordField, TextAreaField, IntegerField
 
 from cloud_computing.model.models import ResourceRequests
-from cloud_computing.utils.util import ReadonlyCKTextAreaField, CKTextAreaField
+from cloud_computing.utils.util import ReadonlyCKTextAreaField, CKTextAreaField, ReadOnlyIntegerField
 
 MAX_LEN_REQUEST_RESOURCES_ADMIN = 100
 
@@ -145,6 +145,84 @@ class ResourceRequestsAdmin(sqla.ModelView):
         return current_user.has_role('admin')
 
 
+class ComponentAdmin(sqla.ModelView):
+
+    form_overrides = {
+        'available': ReadOnlyIntegerField
+    }
+
+    def bigger_than_zero(form, field):
+        if field.data <= 0:
+            raise ValidationError("Esse campo precisa ser maior que zero.")
+
+    form_args = dict(
+        price=dict(validators=[bigger_than_zero])
+    )
+
+    def is_accessible(self):
+        """Prevent administration of ResourceRequests unless the currently
+        logged-in user has the "admin" role.
+        """
+        return current_user.has_role('admin')
+
+    def scaffold_form(self):
+        """Adiciona o compo Adicionar Quantidade ao Form"""
+        form_class = super(ComponentAdmin, self).scaffold_form()
+
+        form_class.quantity = IntegerField('Adicionar Quantidade')
+        return form_class
+
+    def on_model_change(self, form, model, is_created):
+        """Check if the available quantity and price are > 0."""
+        if is_created:
+            if model.quantity >= 0:
+                model.total = model.quantity
+            else:
+                raise ValidationError("Quantidade total precisa ser maior que a disponível.")
+        else:
+            if model.available + model.quantity >= 0:
+                model.total = model.total + model.quantity
+            else:
+                raise ValidationError("Quantidade total precisa ser maior que a disponível.")
 
 
+class CpuAdmin(ComponentAdmin):
+    column_list = ['model', 'cores', 'frequency', 'price', 'total', 'available']
+    form_columns = ['model', 'cores', 'frequency', 'price', 'available']
 
+    form_args = dict(
+        cores=dict(validators=[ComponentAdmin.bigger_than_zero]),
+        frequency=dict(validators=[ComponentAdmin.bigger_than_zero]),
+        price=dict(validators=[ComponentAdmin.bigger_than_zero])
+    )
+
+
+class GpuAdmin(ComponentAdmin):
+    column_list = ['model', 'ram', 'frequency', 'price', 'total', 'available']
+    form_columns = ['model', 'ram', 'frequency', 'price', 'available']
+
+    form_args = dict(
+        ram=dict(validators=[ComponentAdmin.bigger_than_zero]),
+        frequency=dict(validators=[ComponentAdmin.bigger_than_zero]),
+        price=dict(validators=[ComponentAdmin.bigger_than_zero])
+    )
+
+
+class RamAdmin(ComponentAdmin):
+    column_list = ['model', 'capacity', 'price', 'total', 'available']
+    form_columns = ['model', 'capacity', 'price', 'available']
+
+    form_args = dict(
+        capacity=dict(validators=[ComponentAdmin.bigger_than_zero]),
+        price=dict(validators=[ComponentAdmin.bigger_than_zero])
+    )
+
+
+class HdAdmin(ComponentAdmin):
+    column_list = ['model', 'capacity', 'is_ssd', 'price', 'total', 'available']
+    form_columns = ['model', 'capacity', 'is_ssd', 'price', 'available']
+
+    form_args = dict(
+        capacity=dict(validators=[ComponentAdmin.bigger_than_zero]),
+        price=dict(validators=[ComponentAdmin.bigger_than_zero])
+    )

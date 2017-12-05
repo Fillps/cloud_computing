@@ -25,7 +25,10 @@ class Component:
     @validates('total')
     def update_total(self, key, value):
         """On adding new components, update the available components."""
-        if self.total is None:
+        if value < 0:
+            raise ValueError("O valor não pode menor que zero.")
+            return
+        elif self.total is None:
             self.available = value
         else:
             self.available = self.available + value-self.total
@@ -33,6 +36,13 @@ class Component:
 
     def __str__(self):
         return self.model
+
+    @validates('price')
+    def check_price(self, key, value):
+        if value < 0:
+            raise ValueError("O preço não pode menor que zero.")
+        else:
+            return value
 
 
 class PlanComponent:

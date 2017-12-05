@@ -2,6 +2,7 @@
 from flask import Flask
 from flask_admin import Admin
 from flask_heroku import Heroku
+from flask_admin.menu import BaseMenu, MenuView
 
 from cloud_computing.model.database import db, user_datastore
 
@@ -41,6 +42,10 @@ def config_flask_admin(app):
     admin.add_view(_adm.RoleAdmin(models.Role, db.session))
     admin.add_view(_adm.PlanAdmin(models.Plan, db.session))
     admin.add_view(_adm.ResourceRequestsAdmin(models.ResourceRequests, db.session, endpoint='resource-requests-admin'))
+    admin.add_view(_adm.CpuAdmin(models.Cpu, db.session, category='Componentes'))
+    admin.add_view(_adm.GpuAdmin(models.Gpu, db.session, category='Componentes'))
+    admin.add_view(_adm.RamAdmin(models.Ram, db.session, category='Componentes'))
+    admin.add_view(_adm.HdAdmin(models.Hd, db.session, category='Componentes'))
 
     admin.add_view(_user.ResourceRequestsUser(models.ResourceRequests, db.session, endpoint='resource-requests-user'))
     return admin
