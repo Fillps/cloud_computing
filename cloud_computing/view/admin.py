@@ -169,7 +169,8 @@ class ComponentAdmin(sqla.ModelView):
         """Adiciona o compo Adicionar Quantidade ao Form"""
         form_class = super(ComponentAdmin, self).scaffold_form()
 
-        form_class.quantity = IntegerField('Adicionar Quantidade')
+        form_class.quantity = IntegerField('Adicionar Quantidade', default=0)
+    
         return form_class
 
     def on_model_change(self, form, model, is_created):
