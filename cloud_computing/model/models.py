@@ -105,7 +105,7 @@ class User(db.Model, UserMixin):
     )
 
     def __str__(self):
-        return '<User id=%s email=%s>' % (self.id, self.email)
+        return self.email
 
 
 class Plan(db.Model):
@@ -134,6 +134,9 @@ class ResourceRequests(db.Model):
     admin_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     message_date = db.Column(db.DateTime(timezone=True), server_default=func.now())
     answer_date = db.Column(db.DateTime(timezone=True))
+
+    admin_rel = db.relationship('User', foreign_keys=[admin_id])
+    user_rel = db.relationship('User', foreign_keys=[user_id])
 
 
 class Cpu(db.Model, Component):

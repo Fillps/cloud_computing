@@ -26,6 +26,8 @@ class UserAdmin(sqla.ModelView):
     # available Roles when creating or editing a User
     column_auto_select_related = True
 
+    column_searchable_list = ['id', 'name', 'last_name', 'email', 'cpf', 'cnpj', 'company', 'active', 'confirmed_at']
+
     def is_accessible(self):
         """Prevent administration of Users unless the currently
         logged-in user has the "admin" role.
@@ -64,6 +66,8 @@ class UserAdmin(sqla.ModelView):
 class RoleAdmin(sqla.ModelView):
     """Customized Role model for SQL-Admin."""
 
+    column_searchable_list = ['name', 'description']
+
     def is_accessible(self):
         """Prevent administration of Roles unless the currently
         logged-in user has the "admin" role.
@@ -73,8 +77,9 @@ class RoleAdmin(sqla.ModelView):
 
 class PlanAdmin(sqla.ModelView):
     """Customized Plan model for SQL-Admin."""
-    column_list = ('title', 'price', 'description', 'is_public', 'cpu', 'gpus', 'rams', 'hds', 'os')
+    column_list = ['title', 'price', 'description', 'is_public', 'cpu', 'gpus', 'rams', 'hds', 'os']
     form_columns = column_list
+    column_searchable_list = ['title', 'price', 'description', 'is_public']
 
     def is_accessible(self):
         """Prevent administration of Plans unless the currently
@@ -85,8 +90,9 @@ class PlanAdmin(sqla.ModelView):
 
 class ResourceRequestsAdmin(sqla.ModelView):
     """Customized ResourceRequests model for SQL-Admin."""
-    column_list = ('id', 'user_id', 'message', 'message_date')
+    column_list = ['id', 'user_rel', 'message', 'message_date']
     form_columns = ('message', 'answer')
+    column_searchable_list = ['id', 'message', 'message_date']
 
     # Admin cannot delete or create requests, only answer them.
     can_delete = False
@@ -170,7 +176,7 @@ class ComponentAdmin(sqla.ModelView):
         form_class = super(ComponentAdmin, self).scaffold_form()
 
         form_class.quantity = IntegerField('Adicionar Quantidade', default=0)
-    
+
         return form_class
 
     def on_model_change(self, form, model, is_created):
@@ -190,6 +196,7 @@ class ComponentAdmin(sqla.ModelView):
 class CpuAdmin(ComponentAdmin):
     column_list = ['model', 'cores', 'frequency', 'price', 'total', 'available']
     form_columns = ['model', 'cores', 'frequency', 'price', 'available']
+    column_searchable_list = column_list
 
     form_args = dict(
         cores=dict(validators=[ComponentAdmin.bigger_than_zero]),
@@ -201,6 +208,7 @@ class CpuAdmin(ComponentAdmin):
 class GpuAdmin(ComponentAdmin):
     column_list = ['model', 'ram', 'frequency', 'price', 'total', 'available']
     form_columns = ['model', 'ram', 'frequency', 'price', 'available']
+    column_searchable_list = column_list
 
     form_args = dict(
         ram=dict(validators=[ComponentAdmin.bigger_than_zero]),
@@ -212,6 +220,7 @@ class GpuAdmin(ComponentAdmin):
 class RamAdmin(ComponentAdmin):
     column_list = ['model', 'capacity', 'price', 'total', 'available']
     form_columns = ['model', 'capacity', 'price', 'available']
+    column_searchable_list = column_list
 
     form_args = dict(
         capacity=dict(validators=[ComponentAdmin.bigger_than_zero]),
@@ -222,6 +231,7 @@ class RamAdmin(ComponentAdmin):
 class HdAdmin(ComponentAdmin):
     column_list = ['model', 'capacity', 'is_ssd', 'price', 'total', 'available']
     form_columns = ['model', 'capacity', 'is_ssd', 'price', 'available']
+    column_searchable_list = column_list
 
     form_args = dict(
         capacity=dict(validators=[ComponentAdmin.bigger_than_zero]),

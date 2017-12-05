@@ -25,9 +25,10 @@ class ResourceRequestsUser(sqla.ModelView):
     can_edit = False
     can_view_details = True
 
-    column_list = ('id', 'message_date', 'message', 'answer_date', 'answer')
-    column_details_list = ('id', 'message_date', 'message', 'answer_date', 'answer')
-    form_excluded_columns = ('message_date', 'answer_date', 'answer', 'id')
+    column_list = ['id', 'message_date', 'message', 'admin_rel','answer_date', 'answer']
+    column_searchable_list = ['id', 'message_date', 'message','answer_date', 'answer']
+    column_details_list = ['id', 'message_date', 'message', 'admin_rel', 'answer_date', 'answer']
+    form_excluded_columns = ['message_date', 'answer_date', 'answer', 'id', 'admin_rel', 'user_rel']
 
     # CKeditor - Text editor for the answer
     extra_js = ['//cdn.ckeditor.com/4.6.0/standard/ckeditor.js']
