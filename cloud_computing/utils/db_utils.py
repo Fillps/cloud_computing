@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from flask_security import utils
+import datetime
 
 from cloud_computing.model.database import db, user_datastore, get_or_create, get
 from cloud_computing.model.models import *
@@ -111,6 +112,15 @@ def setup_database(app):
         # Set example users roles
         user_datastore.add_role_to_user('someone@example.com', 'end-user')
         user_datastore.add_role_to_user('admin@example.com', 'admin')
+
+        # Create a credit card for user 1
+        get_or_create(db.session, CreditCard,
+                      user_id=1,
+                      number=9999999999999999,
+                      name='SOMEONE CARD',
+                      cvv=123,
+                      exp_date=datetime.datetime(day=1, month=6, year=2030))
+
         db.session.commit()
 
         # Create first test plans if they don't exist
@@ -118,6 +128,7 @@ def setup_database(app):
                       title='Plano básico',
                       price=19.99,
                       description='Descrição do plano básico',
+                      period=1,
                       is_public=True,
                       cpu_model='CPU 2 Cores 2.0',
                       os_name='Linux')
@@ -126,6 +137,7 @@ def setup_database(app):
                       title='Plano intermediário',
                       price=29.99,
                       description='Descrição do plano intermediário',
+                      period=1,
                       is_public=True,
                       cpu_model='CPU 4 Cores 2.0',
                       os_name='Linux')
@@ -134,6 +146,7 @@ def setup_database(app):
                       title='Plano avançado',
                       price=39.99,
                       description='Descrição do plano avançado',
+                      period=1,
                       is_public=True,
                       cpu_model='CPU 4 Cores 2.0',
                       os_name='Linux')

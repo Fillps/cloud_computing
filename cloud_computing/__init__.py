@@ -47,6 +47,8 @@ def config_flask_admin(app):
     admin.add_view(_adm.RamAdmin(models.Ram, db.session, category='Componentes'))
     admin.add_view(_adm.HdAdmin(models.Hd, db.session, category='Componentes'))
 
+    admin.add_view(_user.CreditCardUser(models.CreditCard, db.session))
+    admin.add_view(_user.PurchaseUser(models.Purchase, db.session))
     admin.add_view(_user.ResourceRequestsUser(models.ResourceRequests, db.session, endpoint='resource-requests-user'))
     return admin
 

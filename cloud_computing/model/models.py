@@ -114,6 +114,7 @@ class Plan(db.Model):
     title = db.Column(db.Text, unique=True)
     price = db.Column(db.Float(), nullable=False)
     description = db.Column(db.Text)
+    period = db.Column(db.Integer, nullable=False)
     is_public = db.Column(db.Boolean, server_default='false')
     cpu_model = db.Column(db.Text, db.ForeignKey('cpu.model'), nullable=False)
     os_name = db.Column(db.Text, db.ForeignKey('os.name'), nullable=False)
@@ -188,3 +189,27 @@ class PlanHd(db.Model, PlanComponent):
     backref_plan = 'plan_hds'
     hd_model = db.Column(db.Text, db.ForeignKey('hd.model'), primary_key=True)
     hds = db.relationship('Hd', backref=db.backref('plan_hds'))
+
+
+class CreditCard(db.Model):
+    """Definition of CreditCard"""
+    id = db.Column(db.Integer, primary_key=True)
+    number = db.Column(db.BigInteger, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    name = db.Column(db.Text, nullable=False)
+    exp_date = db.Column(db.DateTime, nullable=False)
+    cvv = db.Column(db.Integer, nullable=False)
+
+    users = db.relationship('User', backref=db.backref('credit_cards'))
+
+
+class Purchase(db.Model):
+    """Definition of Purchase"""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    credit_card_id = db.Column(db.Integer, db.ForeignKey('credit_card.id'), nullable=False)
+    plan_id = db.Column(db.Integer, db.ForeignKey('plan.id'), nullable=False)
+
+    users = db.relationship('User', backref=db.backref('purchases'))
+    credit_cards = db.relationship('CreditCard', backref=db.backref('purchases'))
+    plans = db.relationship('Plan', backref=db.backref('purchases'))

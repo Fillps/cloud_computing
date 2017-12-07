@@ -13,26 +13,28 @@ from cloud_computing.utils.util import ReadonlyCKTextAreaField, CKTextAreaField,
 MAX_LEN_REQUEST_RESOURCES_ADMIN = 100
 
 
-class UserAdmin(sqla.ModelView):
+class AdminView(sqla.ModelView):
+    def is_accessible(self):
+        """Prevent administration of Users unless the currently
+        logged-in user has the "admin" role.
+        """
+        return current_user.has_role('admin')
+
+
+class UserAdmin(AdminView):
     """Customized User model for SQL-Admin."""
     # Don't display the password on the list of Users
-    column_exclude_list = ('password',)
+    column_list = ['id', 'name', 'last_name', 'email', 'cpf', 'cnpj', 'company', 'active', 'confirmed_at', 'roles']
 
     # Don't include the standard password field when creating or editing a
     # User (but see below)
-    form_excluded_columns = ('password',)
+    form_columns = ['name', 'last_name', 'email', 'cpf', 'cnpj', 'company', 'active', 'confirmed_at', 'roles']
 
     # Automatically display human-readable names for the current and
     # available Roles when creating or editing a User
     column_auto_select_related = True
 
     column_searchable_list = ['id', 'name', 'last_name', 'email', 'cpf', 'cnpj', 'company', 'active', 'confirmed_at']
-
-    def is_accessible(self):
-        """Prevent administration of Users unless the currently
-        logged-in user has the "admin" role.
-        """
-        return current_user.has_role('admin')
 
     def scaffold_form(self):
         """On the form for creating or editing a User, don't display a field
@@ -63,32 +65,20 @@ class UserAdmin(sqla.ModelView):
             model.password = utils.hash_password(model.password2)
 
 
-class RoleAdmin(sqla.ModelView):
+class RoleAdmin(AdminView):
     """Customized Role model for SQL-Admin."""
 
     column_searchable_list = ['name', 'description']
 
-    def is_accessible(self):
-        """Prevent administration of Roles unless the currently
-        logged-in user has the "admin" role.
-        """
-        return current_user.has_role('admin')
 
-
-class PlanAdmin(sqla.ModelView):
+class PlanAdmin(AdminView):
     """Customized Plan model for SQL-Admin."""
-    column_list = ['title', 'price', 'description', 'is_public', 'cpu', 'gpus', 'rams', 'hds', 'os']
+    column_list = ['title', 'price', 'description', 'period', 'is_public', 'cpu', 'gpus', 'rams', 'hds', 'os']
     form_columns = column_list
-    column_searchable_list = ['title', 'price', 'description', 'is_public']
-
-    def is_accessible(self):
-        """Prevent administration of Plans unless the currently
-        logged-in user has the "admin" role.
-        """
-        return current_user.has_role('admin')
+    column_searchable_list = ['title', 'price', 'period', 'description', 'is_public']
 
 
-class ResourceRequestsAdmin(sqla.ModelView):
+class ResourceRequestsAdmin(AdminView):
     """Customized ResourceRequests model for SQL-Admin."""
     column_list = ['id', 'user_rel', 'message', 'message_date']
     form_columns = ('message', 'answer')
@@ -144,14 +134,8 @@ class ResourceRequestsAdmin(sqla.ModelView):
         else:
             raise validators.ValidationError('Answer cannot be empty!')
 
-    def is_accessible(self):
-        """Prevent administration of ResourceRequests unless the currently
-        logged-in user has the "admin" role.
-        """
-        return current_user.has_role('admin')
 
-
-class ComponentAdmin(sqla.ModelView):
+class ComponentAdmin(AdminView):
 
     form_overrides = {
         'available': ReadOnlyIntegerField
@@ -164,12 +148,6 @@ class ComponentAdmin(sqla.ModelView):
     form_args = dict(
         price=dict(validators=[bigger_than_zero])
     )
-
-    def is_accessible(self):
-        """Prevent administration of ResourceRequests unless the currently
-        logged-in user has the "admin" role.
-        """
-        return current_user.has_role('admin')
 
     def scaffold_form(self):
         """Adiciona o compo Adicionar Quantidade ao Form"""

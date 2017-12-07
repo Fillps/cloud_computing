@@ -11,13 +11,64 @@ from markupsafe import Markup
 from sqlalchemy import func
 from werkzeug.utils import redirect
 
-from cloud_computing.model.models import ResourceRequests
+from cloud_computing.model.models import ResourceRequests, CreditCard, Purchase
 from cloud_computing.utils.util import CKTextAreaField
 
 MAX_LEN_REQUEST_RESOURCES_USER = 50
 
 
-class ResourceRequestsUser(sqla.ModelView):
+class UserModelView(sqla.ModelView):
+    """Define common settings for users."""
+    def is_accessible(self):
+        """Prevent administration of ResourceRequests unless the currently
+        logged-in user has the "end-user" role.
+        """
+        return current_user.has_role('end-user')
+
+
+class PurchaseUser(UserModelView):
+    """Customized PurchaseUser model for SQL-Admin."""
+    can_view_details = True
+    can_edit = False
+    can_create = False
+    column_list = ['id', 'plans', 'credit_cards']
+
+    def get_count_query(self):
+        """Count of the requests with the user_id equal to the current user."""
+        return self.session.query(func.count(Purchase.id)).filter(Purchase.user_id == current_user.id)
+
+    def get_query(self):
+        """Select only the requests with the user_id equal to the current user."""
+        return super(PurchaseUser, self).get_query().filter(Purchase.user_id == current_user.id)
+
+
+class CreditCardUser(UserModelView):
+    """Customized CreditCardUser model for SQL-Admin."""
+    column_list = ['number', 'name', 'exp_date']
+    form_columns = ['number', 'name', 'exp_date', 'cvv']
+
+    def _number_formatter(view, context, model, name):
+        """Format the card number to show only the last 4 digits."""
+        number_str = repr(model.number)
+        return '****' + number_str[len(number_str)-4:]
+
+    column_formatters = {
+        'number': _number_formatter,
+    }
+
+    def get_count_query(self):
+        """Count of the requests with the user_id equal to the current user."""
+        return self.session.query(func.count(CreditCard.id)).filter(CreditCard.user_id == current_user.id)
+
+    def get_query(self):
+        """Select only the requests with the user_id equal to the current user."""
+        return super(CreditCardUser, self).get_query().filter(CreditCard.user_id == current_user.id)
+
+    def on_model_change(self, form, model, is_created):
+        model.user_id = current_user.id
+
+
+class ResourceRequestsUser(UserModelView):
     """Customized ResourceRequests model for SQL-Admin."""
 
     # user cannot delete requests, only create and view them.
@@ -25,8 +76,8 @@ class ResourceRequestsUser(sqla.ModelView):
     can_edit = False
     can_view_details = True
 
-    column_list = ['id', 'message_date', 'message', 'admin_rel','answer_date', 'answer']
-    column_searchable_list = ['id', 'message_date', 'message','answer_date', 'answer']
+    column_list = ['id', 'message_date', 'message', 'admin_rel', 'answer_date', 'answer']
+    column_searchable_list = ['id', 'message_date', 'message', 'answer_date', 'answer']
     column_details_list = ['id', 'message_date', 'message', 'admin_rel', 'answer_date', 'answer']
     form_excluded_columns = ['message_date', 'answer_date', 'answer', 'id', 'admin_rel', 'user_rel']
 
@@ -129,9 +180,3 @@ class ResourceRequestsUser(sqla.ModelView):
             model.message_date = func.now()
         else:
             raise validators.ValidationError('Answer cannot be empty!')
-
-    def is_accessible(self):
-        """Prevent administration of ResourceRequests unless the currently
-        logged-in user has the "end-user" role.
-        """
-        return current_user.has_role('end-user')
