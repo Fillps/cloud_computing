@@ -4,11 +4,11 @@
 <div class="container">
     <div class="row">
         <div class="col-sm-10 col-sm-offset-1">
-            <h1>Cloud computing management interface</h1>
+            <h1>Interface de Gerenciamento</h1>
             {% if not current_user.is_anonymous %}
-                <p>Here you can manage available plans and resources.</p>
+                <p>Aqui você pode gerenciar planos e recursos disponíveis.</p>
             {% else %}
-                <p>You must be logged in to access this interface, please return to the main page.</p>
+                <p>Você deve estar logado para acessar essa interface, por favor retorne à página principal.</p>
             {% endif %}
             <p>
                 <a class="btn btn-primary" href="{{ url_for('default.show_homescreen') }}"><i class="glyphicon glyphicon-chevron-left"></i> Back</a>
