@@ -11,21 +11,28 @@ pipenv --three
 pipenv install
 pipenv shell
 ```
-
-Com o [heroku](https://devcenter.heroku.com/articles/heroku-cli), rode o aplicativo localmente e acesse o endereço informado na linha de comando:
-
+## Selecionando o banco de dados
+### Banco de dados local
+Para rodar com um banco de dados local é necessário ter o [PostgresSQL](https://www.enterprisedb.com/downloads/postgres-postgresql-downloads) instalado e criar um banco de dados chamado 'cloud_computing'. Selecione o arquivo de configuração 'configs/development.py' em 'runserver.py'.
+### Banco de dados remoto
+Para rodar o aplicativo com o banco de dados remoto de Heroku, exporte a variável do banco de dados da seguinte maneira:
 ```bash
 export DATABASE_URL=$(heroku config:get DATABASE_URL -a stormy-plains-13611)
-heroku local web
 ```
-
-Para rodar localmente sem o [heroku](https://devcenter.heroku.com/articles/heroku-cli):
-
+ou sem o Heroku:
 ```bash
 export DATABASE_URL=postgres://smpsmnkhtfugpw:d70650378be28a64671e1d5cc320ac7189a1bbcd7a3566c1d5022cd8ed875b5f@ec2-54-235-90-125.compute-1.amazonaws.com:5432/d4o6b2ii9q94ip
+```
+## Rodando o App
+Com o [heroku](https://devcenter.heroku.com/articles/heroku-cli), rode o aplicativo localmente e acesse o endereço informado na linha de comando:
+```bash
+heroku local web
+```
+ou sem o Heroku:
+```bash
 python runserver.py
 ```
-
+## Testes
 Para rodar os testes é necessário ter o [PostgresSQL](https://www.enterprisedb.com/downloads/postgres-postgresql-downloads) instalado e criar um banco de dados chamado 'cloud_computing_tests'. Para iniciar os testes basta digitar o comando:
 ```bash
 py.test
