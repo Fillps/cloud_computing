@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
+
 from flask_security import RoleMixin, UserMixin
 from sqlalchemy import func
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import validates
-
 from cloud_computing.model.database import db
-
 
 # Create a table to support many-to-many relationship between Users and Roles
 roles_users = db.Table(
@@ -16,7 +15,7 @@ roles_users = db.Table(
 
 
 class Component:
-    """Definition of a Component. To be useed in Cpu, Gpu, Ram, Hd"""
+    """Base class of all components."""
     model = db.Column(db.Text, primary_key=True)
     price = db.Column(db.Float, nullable=False)
     total = db.Column(db.Integer, nullable=False)
@@ -27,7 +26,6 @@ class Component:
         """On adding new components, update the available components."""
         if value < 0:
             raise ValueError("O valor não pode menor que zero.")
-            return
         elif self.total is None:
             self.available = value
         else:
@@ -51,11 +49,11 @@ class PlanComponent:
     backref_plan = 'plan_comps'
 
     @declared_attr
-    def plan_id(cls):
+    def plan_id(self, cls):
         return db.Column(db.Integer, db.ForeignKey('plan.id'), primary_key=True)
 
     @declared_attr
-    def plans(cls):
+    def plans(self, cls):
         return db.relationship('Plan', backref=db.backref(cls.backref_plan))
 
     quantity = db.Column(db.Integer)
