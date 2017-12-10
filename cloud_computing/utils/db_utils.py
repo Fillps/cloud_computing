@@ -1,10 +1,16 @@
 # -*- coding: utf-8 -*-
-from flask_security import utils
-import datetime
 
-from cloud_computing.model.database import db, user_datastore, get_or_create, get
+import datetime
+from flask_security import utils
+
+from cloud_computing.model.database import user_datastore, get_or_create, get
 from cloud_computing.model.models import *
 
+
+# TODO @Filipe Tem como separar essa função entre a inicialização
+# mandatória do banco de dados e uma chamada para uma segunda
+# função que cria os dados de teste que a gente usa durante o
+# desenvolvimento?
 
 def setup_database(app):
     """Creates test data before the app runs, should not go to production."""

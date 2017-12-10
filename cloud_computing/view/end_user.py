@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 from flask import flash, request
 from flask_admin import expose
 from flask_admin.babel import gettext
@@ -14,11 +15,11 @@ from werkzeug.utils import redirect
 from cloud_computing.model.models import ResourceRequests, CreditCard, Purchase
 from cloud_computing.utils.util import CKTextAreaField
 
-MAX_LEN_REQUEST_RESOURCES_USER = 50
+# TODO É necessário ter uma constante para o administrador e uma para o usuário?
+USER_RESOURCES_REQUEST_MESSAGE_LENGTH = 50
 
 
 class UserModelView(sqla.ModelView):
-    """Define common settings for users."""
     def is_accessible(self):
         """Prevent administration of ResourceRequests unless the currently
         logged-in user has the "end-user" role.
@@ -26,8 +27,8 @@ class UserModelView(sqla.ModelView):
         return current_user.has_role('end-user')
 
 
+# TODO Isso é para compras feitas pelo usuário? Deveria ser algo do tipo ContractedPlans
 class PurchaseUser(UserModelView):
-    """Customized PurchaseUser model for SQL-Admin."""
     can_view_details = True
     can_edit = False
     can_create = False
@@ -43,7 +44,6 @@ class PurchaseUser(UserModelView):
 
 
 class CreditCardUser(UserModelView):
-    """Customized CreditCardUser model for SQL-Admin."""
     column_list = ['number', 'name', 'exp_date']
     form_columns = ['number', 'name', 'exp_date', 'cvv']
 
@@ -69,9 +69,8 @@ class CreditCardUser(UserModelView):
 
 
 class ResourceRequestsUser(UserModelView):
-    """Customized ResourceRequests model for SQL-Admin."""
-
-    # user cannot delete requests, only create and view them.
+    # TODO Um usuário não devia ser capaz de cancelar um pedido que ele fez? É muito difícil de implementar?
+    # User cannot delete requests, only create and view them.
     can_delete = False
     can_edit = False
     can_view_details = True
@@ -89,13 +88,13 @@ class ResourceRequestsUser(UserModelView):
     }
 
     def _message_formatter(view, context, model, name):
-        if model.message is not None and len(model.message) > MAX_LEN_REQUEST_RESOURCES_USER:
-            return Markup(model.message[:MAX_LEN_REQUEST_RESOURCES_USER]) + '...'
+        if model.message is not None and len(model.message) > USER_RESOURCES_REQUEST_MESSAGE_LENGTH:
+            return Markup(model.message[:USER_RESOURCES_REQUEST_MESSAGE_LENGTH]) + '...'
         return Markup(model.message)
 
     def _answer_formatter(view, context, model, name):
-        if model.answer is not None and len(model.answer) > MAX_LEN_REQUEST_RESOURCES_USER:
-            return Markup(model.answer[:MAX_LEN_REQUEST_RESOURCES_USER]) + '...'
+        if model.answer is not None and len(model.answer) > USER_RESOURCES_REQUEST_MESSAGE_LENGTH:
+            return Markup(model.answer[:USER_RESOURCES_REQUEST_MESSAGE_LENGTH]) + '...'
         return Markup(model.answer)
 
     def _message_formatter_details(view, context, model, name):
@@ -114,15 +113,16 @@ class ResourceRequestsUser(UserModelView):
             return model.answer_date.strftime('%d/%m/%Y %H:%M:%S')
         return model.answer_date
 
-    column_formatters = {
+    column_formatter = {
         'message': _message_formatter,
         'answer': _answer_formatter,
         'message_date': _message_date_formatter,
         'answer_date': _answer_date_formatter
     }
 
-    # using the export format in the details_view
-    column_formatters_export = {
+    # TODO Por quê export? Não teria um nome mais descritivo?
+    # Using the export format in the details_view
+    column_formatter_export = {
         'message': _message_formatter_details,
         'answer': _answer_formatter_details,
         'message_date': _message_date_formatter,
@@ -131,24 +131,20 @@ class ResourceRequestsUser(UserModelView):
 
     @expose('/details/')
     def details_view(self):
-        """
-            Override the details_view to use different formatter. The default formatter is the list_view formatter, but
-            the export_view formatter is going to replace the formatter of details_view.
-
-            Details model view
-        """
+        """Override the details_view to use a different formatter."""
         return_url = get_redirect_target() or self.get_url('.index_view')
 
         if not self.can_view_details:
             return redirect(return_url)
 
-        id = get_mdict_item_or_list(request.args, 'id')
-        if id is None:
+        request_id = get_mdict_item_or_list(request.args, 'id')
+
+        if request_id is None:
             return redirect(return_url)
 
-        model = self.get_one(id)
+        request_model = self.get_one(request_id)
 
-        if model is None:
+        if request_model is None:
             flash(gettext('Record does not exist.'), 'error')
             return redirect(return_url)
 
@@ -158,22 +154,22 @@ class ResourceRequestsUser(UserModelView):
             template = self.details_template
 
         return self.render(template,
-                           model=model,
+                           model=request_model,
                            details_columns=self._details_columns,
                            get_value=self.get_export_value,
                            return_url=return_url)
 
     def get_count_query(self):
-        """Count of the requests with the user_id equal to the current user."""
+        """Number of requests made by the user."""
         return self.session.query(func.count(ResourceRequests.id)).filter(ResourceRequests.user_id == current_user.id)
 
     def get_query(self):
-        """Select only the requests with the user_id equal to the current user."""
+        """Select only the requests made by the user."""
         return super(ResourceRequestsUser, self).get_query().filter(ResourceRequests.user_id == current_user.id)
 
     def on_model_change(self, form, model, is_created):
-        """Check if the message is empty. If is empty, raise an error.
-        If is not empty save to the DB, creating a new resource request.
+        """Check if the message is empty, if it is raise an error,
+        otherwise save to the db, creating a new resource request.
         """
         if len(model.message):
             model.user_id = current_user.id

@@ -5,7 +5,6 @@ from cloud_computing.model.models import Plan
 
 class Controller(object):
     """Initial implementation of the controller class."""
-
     @staticmethod
     def get_plans():
         """Queries the objects of type Plan on the database."""

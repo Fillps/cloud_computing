@@ -1,20 +1,22 @@
 # -*- coding: utf-8 -*-
+
 from flask import Flask
 from flask_admin import Admin
 from flask_heroku import Heroku
-from flask_admin.menu import BaseMenu, MenuView
+from flask_security import Security
+from flask_security import user_registered
 
 from cloud_computing.model.database import db, user_datastore
+from cloud_computing.model import models
+from cloud_computing.view import admin as _adm, end_user as _user
+from cloud_computing.utils import db_utils
+from cloud_computing.view.register import ExtendedRegisterForm
 
 
 def create_app(config_filename='../configs/production.py'):
-    """Initialize Flask"""
     app = Flask(__name__)
 
-    # Setup heroku
     Heroku(app)
-
-    # Import configuration
     app.config.from_pyfile(config_filename)
 
     config_database(app)
@@ -25,7 +27,6 @@ def create_app(config_filename='../configs/production.py'):
 
 
 def config_flask_admin(app):
-    # Initialize Flask-Admin
     admin = Admin(
         app,
         'Management',
@@ -33,10 +34,6 @@ def config_flask_admin(app):
         template_mode='bootstrap3',
         url='/manage'
     )
-
-    # Add Flask-Admin views for Users and Roles
-    from cloud_computing.model import models
-    from cloud_computing.view import admin as _adm, end_user as _user
 
     admin.add_view(_adm.UserAdmin(models.User, db.session))
     admin.add_view(_adm.RoleAdmin(models.Role, db.session))
@@ -54,22 +51,15 @@ def config_flask_admin(app):
 
 
 def config_database(app):
-
     db.init_app(app)
     config_flask_security(app)
-
-    from cloud_computing.utils import db_utils
     db_utils.setup_database(app)
 
 
 def config_flask_security(app):
-    # Initialize Flask-Security
-    from flask_security import Security
-    from cloud_computing.view.security import ExtendedRegisterForm
     Security(app, user_datastore, register_form=ExtendedRegisterForm)
 
-    from flask_security import user_registered
-
+    # TODO Uma função definida dentro de outra função? Essa é a melhor forma de fazer isso?
     @user_registered.connect_via(app)
     def user_registered_sighandler(sender, **extra):
         user = extra.get('user')

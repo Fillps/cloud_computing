@@ -1,10 +1,10 @@
-import inspect
+# -*- coding: utf-8 -*-
 
+import inspect
 import pytest
 
 from cloud_computing import create_app
 from cloud_computing.model.database import db as _db
-
 from . import factories
 
 

@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
+
 from flask_security import RoleMixin, UserMixin
 from sqlalchemy import func
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import validates
 
 from cloud_computing.model.database import db
-
 
 # Create a table to support many-to-many relationship between Users and Roles
 roles_users = db.Table(
@@ -15,8 +15,7 @@ roles_users = db.Table(
 )
 
 
-class Component:
-    """Definition of a Component. To be useed in Cpu, Gpu, Ram, Hd"""
+class Resource:
     model = db.Column(db.Text, primary_key=True)
     price = db.Column(db.Float, nullable=False)
     total = db.Column(db.Integer, nullable=False)
@@ -27,7 +26,6 @@ class Component:
         """On adding new components, update the available components."""
         if value < 0:
             raise ValueError("O valor não pode menor que zero.")
-            return
         elif self.total is None:
             self.available = value
         else:
@@ -45,48 +43,38 @@ class Component:
             return value
 
 
-class PlanComponent:
-    """Definition of a PlanComponent"""
-
+class PlanResource:
+    # TODO @Filipe Revisa essa descrição, não estou bem certo de que é isso
+    """Base class of resources composing a plan."""
     backref_plan = 'plan_comps'
+    quantity = db.Column(db.Integer)
 
     @declared_attr
     def plan_id(cls):
-        return db.Column(db.Integer, db.ForeignKey('plan.id'), primary_key=True)
+        return db.Column(db.Integer, db.ForeignKey('plan.id'),
+                         primary_key=True)
 
     @declared_attr
     def plans(cls):
         return db.relationship('Plan', backref=db.backref(cls.backref_plan))
 
-    quantity = db.Column(db.Integer)
-
 
 class Role(db.Model, RoleMixin):
-    """Definition of user role."""
     id = db.Column(db.Integer(), primary_key=True)
     name = db.Column(db.String(80), unique=True)
     description = db.Column(db.String(255))
 
-    # __str__ is required by Flask-Admin, so we can have human-readable
-    # values for the Role when editing a User. If we were using Python 2.7,
-    # this would be __unicode__ instead.
+    # Human-readable values for the Role when editing a User
     def __str__(self):
         return self.name
 
-    # __hash__ is required to avoid the exception TypeError: unhashable type:
+    # Required to avoid the exception TypeError: unhashable type:
     # 'Role' when saving a User
     def __hash__(self):
         return hash(self.name)
 
 
 class User(db.Model, UserMixin):
-    """Definition of user, fields are required by Flask-Security.
-
-    Our User has six fields: ID, email, password, active, confirmed_at
-    and roles. The roles field represents a many-to-many relationship
-    using the roles_users table. Each user may have no role, one role,
-    or multiple roles.
-    """
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.Text, nullable=False)
     last_name = db.Column(db.Text, nullable=False)
@@ -109,7 +97,6 @@ class User(db.Model, UserMixin):
 
 
 class Plan(db.Model):
-    """Definition of plan."""
     id = db.Column(db.Integer(), primary_key=True)
     title = db.Column(db.Text, unique=True)
     price = db.Column(db.Float(), nullable=False)
@@ -119,6 +106,7 @@ class Plan(db.Model):
     cpu_model = db.Column(db.Text, db.ForeignKey('cpu.model'), nullable=False)
     os_name = db.Column(db.Text, db.ForeignKey('os.name'), nullable=False)
 
+    # TODO @Filipe gpus, rams, etc são nomes bem feios, não dá pra mudar? Talvez ram_capacity...
     os = db.relationship('Os', backref=db.backref('plans'))
     cpu = db.relationship('Cpu', backref=db.backref('plans'))
     gpus = db.relationship('Gpu', secondary='plan_gpu')
@@ -127,7 +115,6 @@ class Plan(db.Model):
 
 
 class ResourceRequests(db.Model):
-    """Definition of ResourceRequests"""
     id = db.Column(db.Integer(), primary_key=True)
     message = db.Column(db.Text, nullable=False)
     answer = db.Column(db.Text)
@@ -140,59 +127,54 @@ class ResourceRequests(db.Model):
     user_rel = db.relationship('User', foreign_keys=[user_id])
 
 
-class Cpu(db.Model, Component):
-    """Definition of CPU"""
+class Cpu(db.Model, Resource):
     cores = db.Column(db.Integer, nullable=False)
     frequency = db.Column(db.Float, nullable=False)
 
 
-class Gpu(db.Model, Component):
-    """Definition of CPU"""
+class Gpu(db.Model, Resource):
     frequency = db.Column(db.Float, nullable=False)
     ram = db.Column(db.Integer, nullable=False)
 
 
-class Ram(db.Model, Component):
-    """Definition of RAM"""
+class Ram(db.Model, Resource):
     capacity = db.Column(db.Integer, nullable=False)
 
 
-class Hd(db.Model, Component):
+class Hd(db.Model, Resource):
     capacity = db.Column(db.Integer, nullable=False)
     is_ssd = db.Column(db.Boolean, server_default='false')
 
 
 class Os(db.Model):
-    """Definition of OS"""
     name = db.Column(db.Text, primary_key=True)
 
     def __str__(self):
         return self.name
 
 
-class PlanGpu(db.Model, PlanComponent):
-    """Definition of PlanGpu"""
+class PlanGpu(db.Model, PlanResource):
     backref_plan = 'plan_gpus'
+
     gpu_model = db.Column(db.Text, db.ForeignKey('gpu.model'), primary_key=True)
     gpus = db.relationship('Gpu', backref=db.backref('plan_gpus'))
 
 
-class PlanRam(db.Model, PlanComponent):
-    """Definition of PlanRam"""
+class PlanRam(db.Model, PlanResource):
     backref_plan = 'plan_rams'
+
     ram_model = db.Column(db.Text, db.ForeignKey('ram.model'), primary_key=True)
     rams = db.relationship('Ram', backref=db.backref('plan_rams'))
 
 
-class PlanHd(db.Model, PlanComponent):
-    """Definition of PlanHd"""
+class PlanHd(db.Model, PlanResource):
     backref_plan = 'plan_hds'
+
     hd_model = db.Column(db.Text, db.ForeignKey('hd.model'), primary_key=True)
     hds = db.relationship('Hd', backref=db.backref('plan_hds'))
 
 
 class CreditCard(db.Model):
-    """Definition of CreditCard"""
     id = db.Column(db.Integer, primary_key=True)
     number = db.Column(db.BigInteger, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -204,7 +186,6 @@ class CreditCard(db.Model):
 
 
 class Purchase(db.Model):
-    """Definition of Purchase"""
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     credit_card_id = db.Column(db.Integer, db.ForeignKey('credit_card.id'), nullable=False)
