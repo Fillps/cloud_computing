@@ -11,7 +11,6 @@ from wtforms.fields import PasswordField, IntegerField
 from cloud_computing.model.models import ResourceRequests
 from cloud_computing.utils.util import ReadonlyCKTextAreaField, CKTextAreaField, ReadOnlyIntegerField
 
-# TODO É necessário ter uma constante para o administrador e uma para o usuário?
 ADMIN_RESOURCES_REQUEST_MESSAGE_LENGTH = 100
 
 
@@ -79,14 +78,12 @@ class PlanAdmin(AdminView):
                    'cpu', 'gpus', 'rams', 'hds', 'os']
     column_searchable_list = ['title', 'price', 'period', 'description',
                               'is_public']
-    # TODO Por quê tem dois campos iguais?
     form_columns = column_list
 
 
 class ResourceRequestsAdmin(AdminView):
     column_list = ['id', 'user_rel', 'message', 'message_date']
-    # TODO Por quê aqui é uma tupla e não uma lista?
-    form_columns = ('message', 'answer')
+    form_columns = ['message', 'answer']
     column_searchable_list = ['id', 'message', 'message_date']
 
     # Admins cannot delete or create requests, only answer them
@@ -113,7 +110,7 @@ class ResourceRequestsAdmin(AdminView):
             return model.message_date.strftime('%d/%m/%Y %H:%M:%S')
         return model.message_date
 
-    column_formatter = {
+    column_formatters = {
         'message': _message_formatter,
         'message_date': _message_date_formatter
 
@@ -121,11 +118,11 @@ class ResourceRequestsAdmin(AdminView):
 
     def get_count_query(self):
         """Count of the requests without answers."""
-        return self.session.query(func.count(ResourceRequests.id)).filter(ResourceRequests.admin_id is None)
+        return self.session.query(func.count(ResourceRequests.id)).filter(ResourceRequests.admin_id == None)
 
     def get_query(self):
         """Select only the requests without answers."""
-        return super(ResourceRequestsAdmin, self).get_query().filter(ResourceRequests.admin_id is None)
+        return super(ResourceRequestsAdmin, self).get_query().filter(ResourceRequests.admin_id == None)
 
     def on_model_change(self, form, model, is_created):
         """Check if the answer is empty. If is empty, raise an error.
@@ -151,8 +148,8 @@ class ComponentAdmin(AdminView):
         price=dict(validators=[bigger_than_zero])
     )
 
-    # TODO Por quê scaffold_form? Não poderia ser um nome mais descritivo?
     def scaffold_form(self):
+        """Overrides the scaffold_form function. Adds the quantity field to the form."""
         form_class = super(ComponentAdmin, self).scaffold_form()
 
         form_class.quantity = IntegerField('Adicionar Quantidade', default=0)

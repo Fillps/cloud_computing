@@ -15,50 +15,6 @@ roles_users = db.Table(
 )
 
 
-class Resource:
-    model = db.Column(db.Text, primary_key=True)
-    price = db.Column(db.Float, nullable=False)
-    total = db.Column(db.Integer, nullable=False)
-    available = db.Column(db.Integer)
-
-    @validates('total')
-    def update_total(self, key, value):
-        """On adding new components, update the available components."""
-        if value < 0:
-            raise ValueError("O valor não pode menor que zero.")
-        elif self.total is None:
-            self.available = value
-        else:
-            self.available = self.available + value-self.total
-        return value
-
-    def __str__(self):
-        return self.model
-
-    @validates('price')
-    def check_price(self, key, value):
-        if value < 0:
-            raise ValueError("O preço não pode menor que zero.")
-        else:
-            return value
-
-
-class PlanResource:
-    # TODO @Filipe Revisa essa descrição, não estou bem certo de que é isso
-    """Base class of resources composing a plan."""
-    backref_plan = 'plan_comps'
-    quantity = db.Column(db.Integer)
-
-    @declared_attr
-    def plan_id(cls):
-        return db.Column(db.Integer, db.ForeignKey('plan.id'),
-                         primary_key=True)
-
-    @declared_attr
-    def plans(cls):
-        return db.relationship('Plan', backref=db.backref(cls.backref_plan))
-
-
 class Role(db.Model, RoleMixin):
     id = db.Column(db.Integer(), primary_key=True)
     name = db.Column(db.String(80), unique=True)
@@ -127,6 +83,35 @@ class ResourceRequests(db.Model):
     user_rel = db.relationship('User', foreign_keys=[user_id])
 
 
+class Resource:
+    """Base class of Cpu, Gpu, Ram, Hd. Declares common attributes and functions shared by this classes."""
+    model = db.Column(db.Text, primary_key=True)
+    price = db.Column(db.Float, nullable=False)
+    total = db.Column(db.Integer, nullable=False)
+    available = db.Column(db.Integer)
+
+    @validates('total')
+    def update_total(self, key, value):
+        """On adding new components, update the available components."""
+        if value < 0:
+            raise ValueError("O valor não pode ser menor que zero.")
+        elif self.total is None:
+            self.available = value
+        else:
+            self.available = self.available + value-self.total
+        return value
+
+    def __str__(self):
+        return self.model
+
+    @validates('price')
+    def check_price(self, key, value):
+        if value < 0:
+            raise ValueError("O preço não pode ser menor que zero.")
+        else:
+            return value
+
+
 class Cpu(db.Model, Resource):
     cores = db.Column(db.Integer, nullable=False)
     frequency = db.Column(db.Float, nullable=False)
@@ -151,6 +136,21 @@ class Os(db.Model):
 
     def __str__(self):
         return self.name
+
+
+class PlanResource:
+    """Base class of PlanGpu, PlanRam, PlanHd. Declares common attributes and functions shared by this classes."""
+    backref_plan = 'plan_comps'
+    quantity = db.Column(db.Integer)
+
+    @declared_attr
+    def plan_id(self):
+        return db.Column(db.Integer, db.ForeignKey('plan.id'),
+                         primary_key=True)
+
+    @declared_attr
+    def plans(self):
+        return db.relationship('Plan', backref=db.backref(self.backref_plan))
 
 
 class PlanGpu(db.Model, PlanResource):

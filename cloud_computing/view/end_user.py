@@ -15,7 +15,6 @@ from werkzeug.utils import redirect
 from cloud_computing.model.models import ResourceRequests, CreditCard, Purchase
 from cloud_computing.utils.util import CKTextAreaField
 
-# TODO É necessário ter uma constante para o administrador e uma para o usuário?
 USER_RESOURCES_REQUEST_MESSAGE_LENGTH = 50
 
 
@@ -27,7 +26,6 @@ class UserModelView(sqla.ModelView):
         return current_user.has_role('end-user')
 
 
-# TODO Isso é para compras feitas pelo usuário? Deveria ser algo do tipo ContractedPlans
 class PurchaseUser(UserModelView):
     can_view_details = True
     can_edit = False
@@ -69,9 +67,8 @@ class CreditCardUser(UserModelView):
 
 
 class ResourceRequestsUser(UserModelView):
-    # TODO Um usuário não devia ser capaz de cancelar um pedido que ele fez? É muito difícil de implementar?
-    # User cannot delete requests, only create and view them.
-    can_delete = False
+    # User can create, view and delete requests, but cannot edit them.
+    can_delete = True
     can_edit = False
     can_view_details = True
 
@@ -113,16 +110,16 @@ class ResourceRequestsUser(UserModelView):
             return model.answer_date.strftime('%d/%m/%Y %H:%M:%S')
         return model.answer_date
 
-    column_formatter = {
+    column_formatters = {
         'message': _message_formatter,
         'answer': _answer_formatter,
         'message_date': _message_date_formatter,
         'answer_date': _answer_date_formatter
     }
 
-    # TODO Por quê export? Não teria um nome mais descritivo?
-    # Using the export format in the details_view
-    column_formatter_export = {
+    # Using the export format in the details_view.
+    # This variable is going to be used in the function 'get_export_value', witch will be used in 'details_view'.
+    column_formatters_export = {
         'message': _message_formatter_details,
         'answer': _answer_formatter_details,
         'message_date': _message_date_formatter,
@@ -131,7 +128,7 @@ class ResourceRequestsUser(UserModelView):
 
     @expose('/details/')
     def details_view(self):
-        """Override the details_view to use a different formatter."""
+        """Override the details_view to use the export formatter."""
         return_url = get_redirect_target() or self.get_url('.index_view')
 
         if not self.can_view_details:
