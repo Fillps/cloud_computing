@@ -1,8 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from cloud_computing import create_app
 
-app = create_app('../configs/production.py')
+from cloud_computing.app_factory import AppFactory
+
+
+factory = AppFactory('../configs/production.py')
+app = factory.get_app()
 
 if __name__ == '__main__':
     app.run()

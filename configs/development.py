@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
+
 from configs.common import *  # NOQA
 
-# built-in constraints
+# TODO O que é NOQA? O que está acontecendo nesses arquivos?
+
 DEBUG = True
 
 SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:@localhost/cloud_computing'

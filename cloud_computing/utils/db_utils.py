@@ -1,12 +1,16 @@
 # -*- coding: utf-8 -*-
-from flask_security import utils
-import datetime
 
-from cloud_computing.model.database import db, user_datastore, get_or_create, get
+import datetime
+from flask_security import utils
+
+from cloud_computing.model.database import user_datastore, get_or_create, get
 from cloud_computing.model.models import *
 
+END_USER_ID = 1500
+ADMIN_ID = 1501
 
-def setup_database(app):
+
+def setup_development_data(app):
     """Creates test data before the app runs, should not go to production."""
 
     # Create any database tables that don't exist yet
@@ -23,16 +27,16 @@ def setup_database(app):
         # In each case use Flask-Security utility function to encrypt the password
         encrypted_password = utils.hash_password('password')
 
-        if user_datastore.find_user(id=1, email='someone@example.com') is None:
-            user_datastore.create_user(id=1,
+        if user_datastore.find_user(id=END_USER_ID, email='someone@example.com') is None:
+            user_datastore.create_user(id=END_USER_ID,
                                        name='someone',
                                        last_name='example',
                                        cpf='00099988877',
                                        email='someone@example.com',
                                        password=encrypted_password)
 
-        if user_datastore.find_user(id=2, email='admin@example.com') is None:
-            user_datastore.create_user(id=2,
+        if user_datastore.find_user(id=ADMIN_ID, email='admin@example.com') is None:
+            user_datastore.create_user(id=ADMIN_ID,
                                        name='admin',
                                        last_name='example',
                                        cpf='00099988878',
@@ -105,9 +109,9 @@ def setup_database(app):
 
         # Set example of resource requests
         get_or_create(db.session, ResourceRequests, message='Teste de requisição de recurso',
-                      user_id=1)
+                      user_id=END_USER_ID)
         get_or_create(db.session, ResourceRequests, message='Teste de requisição de recurso 2',
-                      user_id=1)
+                      user_id=END_USER_ID)
 
         # Set example users roles
         user_datastore.add_role_to_user('someone@example.com', 'end-user')
@@ -115,7 +119,7 @@ def setup_database(app):
 
         # Create a credit card for user 1
         get_or_create(db.session, CreditCard,
-                      user_id=1,
+                      user_id=END_USER_ID,
                       number=9999999999999999,
                       name='SOMEONE CARD',
                       cvv=123,

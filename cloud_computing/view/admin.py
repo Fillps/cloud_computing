@@ -1,16 +1,17 @@
 # -*- coding: utf-8 -*-
+
 from flask_admin.contrib import sqla
 from flask_admin.contrib.sqla import validators
 from flask_security import current_user, utils
 from markupsafe import Markup
 from sqlalchemy import func
-from wtforms import ValidationError, DecimalField
-from wtforms.fields import PasswordField, TextAreaField, IntegerField
+from wtforms import ValidationError
+from wtforms.fields import PasswordField, IntegerField
 
 from cloud_computing.model.models import ResourceRequests
 from cloud_computing.utils.util import ReadonlyCKTextAreaField, CKTextAreaField, ReadOnlyIntegerField
 
-MAX_LEN_REQUEST_RESOURCES_ADMIN = 100
+ADMIN_RESOURCES_REQUEST_MESSAGE_LENGTH = 100
 
 
 class AdminView(sqla.ModelView):
@@ -22,19 +23,21 @@ class AdminView(sqla.ModelView):
 
 
 class UserAdmin(AdminView):
-    """Customized User model for SQL-Admin."""
     # Don't display the password on the list of Users
-    column_list = ['id', 'name', 'last_name', 'email', 'cpf', 'cnpj', 'company', 'active', 'confirmed_at', 'roles']
+    column_list = ['id', 'name', 'last_name', 'email', 'cpf', 'cnpj',
+                   'company', 'active', 'confirmed_at', 'roles']
 
     # Don't include the standard password field when creating or editing a
     # User (but see below)
-    form_columns = ['name', 'last_name', 'email', 'cpf', 'cnpj', 'company', 'active', 'confirmed_at', 'roles']
+    form_columns = ['name', 'last_name', 'email', 'cpf', 'cnpj', 'company',
+                    'active', 'confirmed_at', 'roles']
 
     # Automatically display human-readable names for the current and
     # available Roles when creating or editing a User
     column_auto_select_related = True
 
-    column_searchable_list = ['id', 'name', 'last_name', 'email', 'cpf', 'cnpj', 'company', 'active', 'confirmed_at']
+    column_searchable_list = ['id', 'name', 'last_name', 'email', 'cpf',
+                              'cnpj', 'company', 'active', 'confirmed_at']
 
     def scaffold_form(self):
         """On the form for creating or editing a User, don't display a field
@@ -52,11 +55,12 @@ class UserAdmin(AdminView):
         # Add a password field, naming it "password2" and
         # labeling it "New Password"
         form_class.password2 = PasswordField('New Password')
+
         return form_class
 
-    # This callback executes when the user saves changes to a newly-created
-    # or edited User -- before the changes are committed to the database
     def on_model_change(self, form, model, is_created):
+        """This callback executes when the user saves changes to a newly-created
+        or edited User -- before the changes are committed to the database"""
         # If the password field isn't blank...
         if len(model.password2):
             # ... then encrypt the new password prior to storing it in the
@@ -66,25 +70,23 @@ class UserAdmin(AdminView):
 
 
 class RoleAdmin(AdminView):
-    """Customized Role model for SQL-Admin."""
-
     column_searchable_list = ['name', 'description']
 
 
 class PlanAdmin(AdminView):
-    """Customized Plan model for SQL-Admin."""
-    column_list = ['title', 'price', 'description', 'period', 'is_public', 'cpu', 'gpus', 'rams', 'hds', 'os']
+    column_list = ['title', 'price', 'description', 'period', 'is_public',
+                   'cpu', 'gpu', 'ram', 'hd', 'os']
+    column_searchable_list = ['title', 'price', 'period', 'description',
+                              'is_public']
     form_columns = column_list
-    column_searchable_list = ['title', 'price', 'period', 'description', 'is_public']
 
 
 class ResourceRequestsAdmin(AdminView):
-    """Customized ResourceRequests model for SQL-Admin."""
     column_list = ['id', 'user_rel', 'message', 'message_date']
-    form_columns = ('message', 'answer')
+    form_columns = ['message', 'answer']
     column_searchable_list = ['id', 'message', 'message_date']
 
-    # Admin cannot delete or create requests, only answer them.
+    # Admins cannot delete or create requests, only answer them
     can_delete = False
     can_create = False
 
@@ -98,9 +100,8 @@ class ResourceRequestsAdmin(AdminView):
     }
 
     def _message_formatter(view, context, model, name):
-        """Format the column with 100 characters."""
-        if len(model.message)>MAX_LEN_REQUEST_RESOURCES_ADMIN:
-            return Markup(model.message[:MAX_LEN_REQUEST_RESOURCES_ADMIN]) + '...'
+        if len(model.message) > ADMIN_RESOURCES_REQUEST_MESSAGE_LENGTH:
+            return Markup(model.message[:ADMIN_RESOURCES_REQUEST_MESSAGE_LENGTH]) + '...'
         else:
             return Markup(model.message)
 
@@ -109,7 +110,6 @@ class ResourceRequestsAdmin(AdminView):
             return model.message_date.strftime('%d/%m/%Y %H:%M:%S')
         return model.message_date
 
-    # format the column message with 100 characters.
     column_formatters = {
         'message': _message_formatter,
         'message_date': _message_date_formatter
@@ -136,7 +136,6 @@ class ResourceRequestsAdmin(AdminView):
 
 
 class ComponentAdmin(AdminView):
-
     form_overrides = {
         'available': ReadOnlyIntegerField
     }
@@ -150,7 +149,7 @@ class ComponentAdmin(AdminView):
     )
 
     def scaffold_form(self):
-        """Adiciona o compo Adicionar Quantidade ao Form"""
+        """Overrides the scaffold_form function. Adds the quantity field to the form."""
         form_class = super(ComponentAdmin, self).scaffold_form()
 
         form_class.quantity = IntegerField('Adicionar Quantidade', default=0)

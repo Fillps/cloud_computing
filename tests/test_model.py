@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 from cloud_computing.model import models
 
 
