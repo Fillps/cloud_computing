@@ -312,3 +312,4 @@ class ServerRamAdmin(ServerComponentAdmin):
 
 class ServerHdAdmin(ServerComponentAdmin):
     can_create = True
+
