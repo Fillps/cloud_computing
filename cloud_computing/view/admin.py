@@ -216,3 +216,57 @@ class HdAdmin(ComponentAdmin):
         capacity=dict(validators=[ComponentAdmin.bigger_than_zero]),
         price=dict(validators=[ComponentAdmin.bigger_than_zero])
     )
+
+
+class ServerAdmin(AdminView):
+    column_list = ['id', 'cpu', 'cores_available', 'n_slot_gpu', 'server_gpus', 'n_slot_ram', 'ram_max', 'ram_total',
+                   'ram_available', 'n_slot_hd', 'hd_total', 'hd_available', 'ssd_total', 'ssd_available', 'os']
+    form_columns = ['cpu', 'n_slot_gpu', 'n_slot_ram', 'ram_max', 'n_slot_hd', 'os']
+
+
+class ServerGpu(AdminView):
+    form_create_rules = ['server', 'gpu']
+    form_edit_rules = ['quantity']
+    form_args = dict(
+        quantity=dict(validators=[ComponentAdmin.bigger_than_zero])
+    )
+
+    def on_model_delete(self, model):
+        if model.available_capacity != model.total_capacity:
+            raise ValidationError('Erro! O GPU a ser deletado ainda está em uso!')
+        else:
+            model.gpu.available += model.quantity
+
+
+class ServerRam(AdminView):
+    form_edit_rules = ['quantity']
+    form_create_rules = ['server', 'ram']
+
+    def on_model_delete(self, model):
+        if model.quantity * model.ram.capacity > model.server.ram_available:
+            raise ValidationError('Erro! A RAM a ser deletado ainda está em uso!')
+        else:
+            model.server.ram_available -= model.quantity * model.ram.capacity
+            model.server.ram_total -= model.quantity * model.ram.capacity
+            model.ram.available += model.quantity
+
+
+class ServerHd(AdminView):
+    form_edit_rules = ['quantity']
+    form_create_rules = ['server', 'hd']
+
+    def on_model_delete(self, model):
+        if model.hd.is_ssd:
+            if model.quantity * model.hd.capacity > model.server.ssd_available:
+                raise ValidationError('Erro! O SSD a ser deletado ainda está em uso!')
+            else:
+                model.server.ssd_available -= model.quantity * model.hd.capacity
+                model.server.ssd_total -= model.quantity * model.hd.capacity
+                model.hd.available += model.quantity
+        else:
+            if model.quantity * model.hd.capacity > model.server.hd_available:
+                raise ValidationError('Erro! O HD a ser deletado ainda está em uso!')
+            else:
+                model.server.hd_available -= model.quantity * model.hd.capacity
+                model.server.hd_total -= model.quantity * model.hd.capacity
+                model.hd.available += model.quantity

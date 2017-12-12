@@ -7,6 +7,7 @@ from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import validates
 
 from cloud_computing.model.database import db
+from cloud_computing.utils.db_utils import get
 
 # Create a table to support many-to-many relationship between Users and Roles
 roles_users = db.Table(
@@ -203,3 +204,162 @@ class Purchase(db.Model):
     users = db.relationship('User', backref=db.backref('purchases'))
     credit_cards = db.relationship('CreditCard', backref=db.backref('purchases'))
     plans = db.relationship('Plan', backref=db.backref('purchases'))
+
+
+class Server(db.Model):
+    """Definition of Server"""
+    id = db.Column(db.Integer, primary_key=True)
+    cpu_model = db.Column(db.Text, db.ForeignKey('cpu.model'), nullable=False)
+    cores_available = db.Column(db.Integer, default=0)
+    os_name = db.Column(db.Text, db.ForeignKey('os.name'))
+    n_slot_ram = db.Column(db.Integer, nullable=False)
+    ram_max = db.Column(db.Integer, nullable=False)
+    ram_total = db.Column(db.Integer, default=0)
+    ram_available = db.Column(db.Integer, default=0)
+    n_slot_gpu = db.Column(db.Integer, nullable=False)
+    gpu_total = db.Column(db.Integer, default=0)
+    gpu_available = db.Column(db.Integer, default=0)
+    n_slot_hd = db.Column(db.Integer, nullable=False)
+    hd_total = db.Column(db.Integer, default=0)
+    hd_available = db.Column(db.Integer, default=0)
+    ssd_total = db.Column(db.Integer, default=0)
+    ssd_available = db.Column(db.Integer, default=0)
+
+    os = db.relationship('Os', backref=db.backref('server'))
+    cpu = db.relationship('Cpu', backref=db.backref('server'))
+    gpus = db.relationship('Gpu', secondary='server_gpu')
+    rams = db.relationship('Ram', secondary='server_ram')
+    hds = db.relationship('Hd', secondary='server_hd')
+
+    @validates('cpu_model')
+    def cpu_model_update(self, key, value):
+        """Update the cores_available when the cpu_model updates."""
+        new_cpu = get(db.session, Cpu, model=value)
+        if self.cpu_model is None:
+            cores_available = new_cpu.cores
+        elif self.cpu.available < 1:
+            raise ValueError("Não existe CPU disponível.")
+        else:
+            cores_available = new_cpu.cores + self.cores_available - self.cpu.cores
+        if cores_available < 0:
+            if key != -1:
+                raise ValueError("O uso de cores está maior do que o disponível. "
+                                 "Tente diminuir a utilização de cores ou aumente os cores do cpu a ser adicionado.")
+        else:
+            self.cores_available = cores_available
+            new_cpu.available -= 1
+            return value
+
+
+class ServerResource:
+    """Definition of ServerResource"""
+
+    backref_plan = 'server_resources'
+
+    @declared_attr
+    def server_id(self):
+        return db.Column(db.Integer, db.ForeignKey('server.id'), primary_key=True)
+
+    @declared_attr
+    def server(self):
+        return db.relationship('Server', backref=db.backref(self.backref_plan))
+
+    quantity = db.Column(db.Integer, default=0)
+
+
+class ServerGpu(db.Model, ServerResource):
+    """Definition of ServerGpu"""
+    backref_plan = 'server_gpus'
+    gpu_model = db.Column(db.Text, db.ForeignKey('gpu.model'), primary_key=True)
+    total_capacity = db.Column(db.Integer, default=0)
+    available_capacity = db.Column(db.Integer, default=0)
+
+    gpu = db.relationship('Gpu', backref=db.backref(backref_plan))
+
+    @validates('quantity')
+    def update_quantity(self, key, value):
+        if value < 1:
+            raise ValueError('A quantidade precisa ser maior que zero.')
+            return
+        elif self.server_id is None:
+            return value
+        elif self.gpu.available < value - self.quantity:
+            raise ValueError("Não existem recursos diponíveis. Tente diminuir a quantidade ou adicionar novos recursos.")
+
+        net_capacity = self.gpu.ram * value - self.gpu.ram * self.quantity
+
+        if self.available_capacity + net_capacity < 0:
+            raise ValueError("O uso do recurso está maior do que o disponível. Tente diminuir a utilização dos recursos"
+                             " ou aumente a quantiadde de recursos a serem adicionados.")
+        else:
+            self.total_capacity += net_capacity
+            self.available_capacity += net_capacity
+            self.gpu.available += self.quantity - value
+            return value
+
+
+class ServerRam(db.Model, ServerResource):
+    """Definition of ServerRam"""
+    backref_plan = 'server_rams'
+    ram_model = db.Column(db.Text, db.ForeignKey('ram.model'), primary_key=True)
+    ram = db.relationship('Ram', backref=db.backref(backref_plan))
+
+    @validates('quantity')
+    def update_quantity(self, key, value):
+        if value < 1:
+            raise ValueError('A quantidade precisa ser maior que zero.')
+            return
+        elif self.server_id is None:
+            return value
+        elif self.ram.available < value - self.quantity:
+            raise ValueError("Não existem recursos diponíveis. Tente diminuir a quantidade ou adicionar novos recursos.")
+
+        current_capacity = self.ram.capacity * self.quantity
+        new_capacity = self.ram.capacity * value
+        net_capacity = new_capacity - current_capacity
+
+        if self.server.ram_available + net_capacity < 0:
+            raise ValueError("O uso do recurso está maior do que o disponível. Tente diminuir a utilização dos recursos"
+                             " ou aumente a quantiadde de recursos a serem adicionados.")
+        else:
+            self.server.ram_total += net_capacity
+            self.server.ram_available += net_capacity
+            self.ram.available += self.quantity - value
+            return value
+
+
+class ServerHd(db.Model, ServerResource):
+    """Definition of ServerHd"""
+    backref_plan = 'server_hds'
+    hd_model = db.Column(db.Text, db.ForeignKey('hd.model'), primary_key=True)
+    hd = db.relationship('Hd', backref=db.backref(backref_plan))
+
+    @validates('quantity')
+    def update_quantity(self, key, value):
+        if value < 1:
+            raise ValueError('A quantidade precisa ser maior que zero.')
+            return
+        elif self.server_id is None:
+            return value
+        elif self.hd.available < value - self.quantity:
+            raise ValueError("Não existem recursos diponíveis. Tente diminuir a quantidade ou adicionar novos recursos.")
+
+        hd_capacity = self.hd.capacity
+        current_capacity = hd_capacity * self.quantity
+        new_capacity = hd_capacity * value
+        net_capacity = new_capacity - current_capacity
+
+        if (not self.hd.is_ssd and self.server.ram_available + net_capacity < 0) or \
+                (self.hd.is_ssd and self.server.ssd_available + net_capacity < 0):
+            raise ValueError("O uso do recurso está maior do que o disponível. Tente diminuir a utilização dos recursos"
+                             " ou aumente a quantiadde de recursos a serem adicionados.")
+        else:
+            if self.hd.is_ssd:
+                self.server.ssd_total += net_capacity
+                self.server.ssd_available += net_capacity
+            else:
+                self.server.hd_total += net_capacity
+                self.server.hd_available += net_capacity
+            self.hd.available += self.quantity - value
+            return value
+
