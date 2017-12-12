@@ -18,6 +18,4 @@ def show_homescreen():
 def show_item(item_name):
     """Shows the item detail page."""
     plan = Controller.get_plan_by_item_name(item_name)
-
-    # TODO Implement test for error (plan == None)
     return render_template('shop-item.html', plan=plan)
