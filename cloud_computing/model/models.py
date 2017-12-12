@@ -531,3 +531,4 @@ def server_hd_before_delete(maper, connection, target):
         connection.execute(Hd.__table__.update()
                            .where(Hd.__table__.c.model == target.hd_model)
                            .values(available=target.hd.available + target.quantity))
+

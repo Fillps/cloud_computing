@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 import warnings
 from flask import Flask
 from flask_admin import Admin
@@ -74,6 +73,25 @@ class AppFactory:
         admin.add_view(_adm.HdAdmin(models.Hd, db.session,
                                     category='Componentes',
                                     name='HDs'))
+
+        admin.add_view(_adm.ServerAdmin(
+            models.Server,
+            db.session,
+            category='Servidores'))
+
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore',
+                                    'Fields missing from ruleset',
+                                    UserWarning)
+            admin.add_view(_adm.ServerGpu(models.ServerGpu,
+                                          db.session,
+                                          category='Servidores'))
+            admin.add_view(_adm.ServerRam(models.ServerRam,
+                                          db.session,
+                                          category='Servidores'))
+            admin.add_view(_adm.ServerHd(models.ServerHd,
+                                         db.session,
+                                         category='Servidores'))
 
         admin.add_view(_user.CreditCardUser(models.CreditCard, db.session, name='Cartões de Crédito'))
         admin.add_view(_user.PurchaseUser(models.Purchase, db.session, name='Compras'))
