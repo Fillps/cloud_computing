@@ -75,7 +75,7 @@ class RoleAdmin(AdminView):
 
 class PlanAdmin(AdminView):
     column_list = ['title', 'price', 'description', 'period', 'is_public',
-                   'cpu', 'gpus', 'rams', 'hds', 'os']
+                   'cpu', 'gpu', 'ram', 'hd', 'os']
     column_searchable_list = ['title', 'price', 'period', 'description',
                               'is_public']
     form_columns = column_list

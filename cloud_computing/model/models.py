@@ -62,12 +62,11 @@ class Plan(db.Model):
     cpu_model = db.Column(db.Text, db.ForeignKey('cpu.model'), nullable=False)
     os_name = db.Column(db.Text, db.ForeignKey('os.name'), nullable=False)
 
-    # TODO @Filipe gpus, rams, etc são nomes bem feios, não dá pra mudar? Talvez ram_capacity...
     os = db.relationship('Os', backref=db.backref('plans'))
     cpu = db.relationship('Cpu', backref=db.backref('plans'))
-    gpus = db.relationship('Gpu', secondary='plan_gpu')
-    rams = db.relationship('Ram', secondary='plan_ram')
-    hds = db.relationship('Hd', secondary='plan_hd')
+    gpu = db.relationship('Gpu', secondary='plan_gpu')
+    ram = db.relationship('Ram', secondary='plan_ram')
+    hd = db.relationship('Hd', secondary='plan_hd')
 
 
 class ResourceRequests(db.Model):
