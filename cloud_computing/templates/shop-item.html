@@ -1,7 +1,6 @@
 {% extends "shop-layout.html" %}
 {% block body %}
 
-    <!-- Page Content -->
     <div class="container">
 
       <div class="row">
@@ -16,14 +15,24 @@
 
         <div class="col-lg-9">
 
-          <div class="card mt-4">
-            <img class="card-img-top img-fluid" src="http://placehold.it/900x400" alt="">
-            <div class="card-body">
-              <h3 class="card-title">{{ plan.title }}</h3>
-              <h4>R${{ plan.price }}</h4>
-              <p class="card-text">{{ plan.description }}</p>
+          {% if plan is not none %}
+            <div class="card mt-4">
+              <img class="card-img-top img-fluid" src="http://placehold.it/900x400" alt="">
+              <div class="card-body">
+                <h3 class="card-title">{{ plan.title }}</h3>
+                <h4>R${{ plan.price }}</h4>
+                <p class="card-text">{{ plan.description }}</p>
+              </div>
             </div>
-          </div>
+          {% else %}
+            <div class="card mt-4">
+              <div class="card h-100">
+                  <div class="card-body">
+                    <h4 class="card-title">Erro ao carregar plano, tente novamente mais tarde.</h4>
+                  </div>
+                </div>
+            </div>
+          {% endif %}
 
         </div>
 
