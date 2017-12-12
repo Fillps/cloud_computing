@@ -7,4 +7,3 @@ cloud_computing.egg-info/
 **/*.pyc
 *.lock
 .env
-
