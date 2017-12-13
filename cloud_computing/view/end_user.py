@@ -31,6 +31,7 @@ class PurchaseUser(UserModelView):
     can_edit = False
     can_create = False
     column_list = ['id', 'plans', 'credit_cards']
+	column_labels = dict(id='Id', plans='Planos', credit_cards='Cartões de Crédito')
 
     def get_count_query(self):
         """Count of the requests with the user_id equal to the current user."""
@@ -44,6 +45,7 @@ class PurchaseUser(UserModelView):
 class CreditCardUser(UserModelView):
     column_list = ['number', 'name', 'exp_date']
     form_columns = ['number', 'name', 'exp_date', 'cvv']
+	column_labels = dict(number='Número', name='Nome', exp_date='Data de Vencimento')
 
     def _number_formatter(view, context, model, name):
         """Format the card number to show only the last 4 digits."""
@@ -76,6 +78,7 @@ class ResourceRequestsUser(UserModelView):
     column_searchable_list = ['id', 'message_date', 'message', 'answer_date', 'answer']
     column_details_list = ['id', 'message_date', 'message', 'admin_rel', 'answer_date', 'answer']
     form_excluded_columns = ['message_date', 'answer_date', 'answer', 'id', 'admin_rel', 'user_rel']
+	column_labels = dict(id='id', message_date='Data da Mensagem', admin_rel='Administrador', answer_date='Data da Resposta', answer='Resposta')
 
     # CKeditor - Text editor for the answer
     extra_js = ['//cdn.ckeditor.com/4.6.0/standard/ckeditor.js']

@@ -26,6 +26,10 @@ class UserAdmin(AdminView):
     # Don't display the password on the list of Users
     column_list = ['id', 'name', 'last_name', 'email', 'cpf', 'cnpj',
                    'company', 'active', 'confirmed_at', 'roles']
+	column_labels = dict(id='Id', name='Nome', last_name='Sobrenome', 
+	                     email='E-mail', cpf='CPF', cnpj='CNPJ', 
+						 company='Empresa', active='Ativo', 
+						 confirmed_at='Cadastrado em', roles='Papéis')
 
     # Don't include the standard password field when creating or editing a
     # User (but see below)
@@ -71,6 +75,7 @@ class UserAdmin(AdminView):
 
 class RoleAdmin(AdminView):
     column_searchable_list = ['name', 'description']
+	column_labels = dict(name='Nome', description='Descrição')
 
 
 class PlanAdmin(AdminView):
@@ -79,12 +84,17 @@ class PlanAdmin(AdminView):
     column_searchable_list = ['title', 'price', 'period', 'description',
                               'is_public']
     form_columns = column_list
+	column_labels = dict(title='Título', price='Preço', description='Descrição', 
+	                     period='Período', is_public='É Público?', cpu='CPU', gpus='GPUs', 
+						 rams='RAMs', hds='HDs', os='OS')
 
 
 class ResourceRequestsAdmin(AdminView):
     column_list = ['id', 'user_rel', 'message', 'message_date']
     form_columns = ['message', 'answer']
     column_searchable_list = ['id', 'message', 'message_date']
+	column_labels = dict(id='Id', user_rel='Usuário', message='Mensagem', 
+	                     message_date='Data da Mensagem')
 
     # Admins cannot delete or create requests, only answer them
     can_delete = False
@@ -174,6 +184,8 @@ class CpuAdmin(ComponentAdmin):
     column_list = ['model', 'cores', 'frequency', 'price', 'total', 'available']
     form_columns = ['model', 'cores', 'frequency', 'price', 'available']
     column_searchable_list = column_list
+	column_labels = dict(model='Modelo', cores='Nº de Núcleos', frequency='Frequência', 
+	                     price='Preço', total='Total', available='Disponíveis')
 
     form_args = dict(
         cores=dict(validators=[ComponentAdmin.bigger_than_zero]),
@@ -186,6 +198,8 @@ class GpuAdmin(ComponentAdmin):
     column_list = ['model', 'ram', 'frequency', 'price', 'total', 'available']
     form_columns = ['model', 'ram', 'frequency', 'price', 'available']
     column_searchable_list = column_list
+	column_labels = dict(model='Modelo', ram='RAM', frequency='Frequência', price='Preço', 
+	                     total='Total', available='Disponíveis')
 
     form_args = dict(
         ram=dict(validators=[ComponentAdmin.bigger_than_zero]),
@@ -198,6 +212,8 @@ class RamAdmin(ComponentAdmin):
     column_list = ['model', 'capacity', 'price', 'total', 'available']
     form_columns = ['model', 'capacity', 'price', 'available']
     column_searchable_list = column_list
+	column_labels = dict(model='Modelo', capacity='Capacidade', price='Preço', 
+	                     total='Total', available='Disponíveis')
 
     form_args = dict(
         capacity=dict(validators=[ComponentAdmin.bigger_than_zero]),
@@ -209,6 +225,8 @@ class HdAdmin(ComponentAdmin):
     column_list = ['model', 'capacity', 'is_ssd', 'price', 'total', 'available']
     form_columns = ['model', 'capacity', 'is_ssd', 'price', 'available']
     column_searchable_list = column_list
+	column_labels = dict(model='Modelo', capacity='Capacidade', is_ssd='SSD', price='Preço', 
+	                     total='Total', available='Disponíveis')
 
     form_args = dict(
         capacity=dict(validators=[ComponentAdmin.bigger_than_zero]),
