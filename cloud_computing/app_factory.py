@@ -57,14 +57,11 @@ class AppFactory:
         admin.add_view(_adm.CpuAdmin(models.Cpu, db.session,
                                      category='Componentes', name='CPUs'))
         admin.add_view(_adm.GpuAdmin(models.Gpu, db.session,
-                                     category='Componentes', 
-									 name='GPUs'))
+                                     category='Componentes', name='GPUs'))
         admin.add_view(_adm.RamAdmin(models.Ram, db.session,
-                                     category='Componentes', 
-									 name='Memórias RAM'))
+                                     category='Componentes', name='Memórias RAM'))
         admin.add_view(_adm.HdAdmin(models.Hd, db.session,
-                                    category='Componentes', 
-									name='HDs'))
+                                    category='Componentes', name='HDs'))
 
         admin.add_view(_user.CreditCardUser(models.CreditCard, db.session, name='Cartões de Crédito'))
         admin.add_view(_user.PurchaseUser(models.Purchase, db.session, name='Compras'))
