@@ -55,7 +55,7 @@ class AppFactory:
             endpoint='resource-requests-admin', 
 			name='Requisições'))
         admin.add_view(_adm.CpuAdmin(models.Cpu, db.session,
-                                     category='Componentes', 
+                                     category='Componentes',
 									 name='CPUs'))
         admin.add_view(_adm.GpuAdmin(models.Gpu, db.session,
                                      category='Componentes', 
