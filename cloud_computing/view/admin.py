@@ -78,7 +78,9 @@ class PlanAdmin(AdminView):
                    'cpu', 'gpu', 'ram', 'hd', 'os']
     column_searchable_list = ['title', 'price', 'period', 'description',
                               'is_public']
-    form_columns = column_list
+    form_columns = ['title', 'price', 'description', 'shop_description',
+                    'period', 'is_public', 'cpu', 'gpu', 'ram', 'hd', 'os',
+                    'thumbnail', 'hero']
 
 
 class ResourceRequestsAdmin(AdminView):

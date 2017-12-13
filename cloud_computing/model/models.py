@@ -61,6 +61,9 @@ class Plan(db.Model):
     is_public = db.Column(db.Boolean, server_default='false')
     cpu_model = db.Column(db.Text, db.ForeignKey('cpu.model'), nullable=False)
     os_name = db.Column(db.Text, db.ForeignKey('os.name'), nullable=False)
+    shop_description = db.Column(db.Text)
+    thumbnail = db.Column(db.Text, default='http://placehold.it/700x400')
+    hero = db.Column(db.Text, default='http://placehold.it/900x400')
 
     os = db.relationship('Os', backref=db.backref('plans'))
     cpu = db.relationship('Cpu', backref=db.backref('plans'))
