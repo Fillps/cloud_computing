@@ -63,7 +63,7 @@ class Plan(db.Model):
     os_name = db.Column(db.Text, db.ForeignKey('os.name'), nullable=False)
     shop_description = db.Column(db.Text)
     thumbnail = db.Column(db.Text, default='http://placehold.it/700x400')
-    hero = db.Column(db.Text, default='http://placehold.it/900x400')
+    hero_image = db.Column(db.Text, default='http://placehold.it/900x400')
 
     os = db.relationship('Os', backref=db.backref('plans'))
     cpu = db.relationship('Cpu', backref=db.backref('plans'))

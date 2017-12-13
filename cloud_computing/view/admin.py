@@ -80,7 +80,7 @@ class PlanAdmin(AdminView):
                               'is_public']
     form_columns = ['title', 'price', 'description', 'shop_description',
                     'period', 'is_public', 'cpu', 'gpu', 'ram', 'hd', 'os',
-                    'thumbnail', 'hero']
+                    'thumbnail', 'hero_image']
 
 
 class ResourceRequestsAdmin(AdminView):
