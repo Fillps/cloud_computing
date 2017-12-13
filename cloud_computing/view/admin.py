@@ -28,8 +28,8 @@ class UserAdmin(AdminView):
                    'company', 'active', 'confirmed_at', 'roles']
 	column_labels = dict(id='Id', name='Nome', last_name='Sobrenome', 
 	                     email='E-mail', cpf='CPF', cnpj='CNPJ', 
-	company='Empresa', active='Ativo', 
-	 confirmed_at='Cadastrado em', roles='Papéis')
+						 company='Empresa', active='Ativo', 
+						 confirmed_at='Cadastrado em', roles='Papéis')
 
     # Don't include the standard password field when creating or editing a
     # User (but see below)
