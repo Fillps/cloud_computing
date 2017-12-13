@@ -21,6 +21,42 @@ class AdminView(sqla.ModelView):
         """
         return current_user.has_role('admin')
 
+    def update_model(self, form, model):
+        """
+            Overrides the function update_model, showing the ValueErrors exceptions from database.
+            This exceptions are shown as ValidationErrors.
+
+            Update model from form.
+
+            :param form:
+                Form instance
+            :param model:
+                Model instance
+        """
+        try:
+            form.populate_obj(model)
+            self._on_model_change(form, model, False)
+            self.session.commit()
+        except ValueError as ve:
+            self.handle_view_exception(ValidationError(ve.args))
+            self.session.rollback()
+            return False
+        except Exception as ex:
+            if not self.handle_view_exception(ex):
+                from flask import flash
+                from flask_admin.babel import gettext
+                flash(gettext('Failed to update record. %(error)s', error=str(ex)), 'error')
+                from flask_admin.contrib.rediscli import log
+                log.exception('Failed to update record.')
+
+            self.session.rollback()
+
+            return False
+        else:
+            self.after_model_change(form, model, False)
+
+        return True
+
 
 class UserAdmin(AdminView):
     # Don't display the password on the list of Users
