@@ -16,15 +16,18 @@
         <div class="col-lg-9">
 
           {% if plan is not none %}
+
             <div class="card mt-4">
-              <img class="card-img-top img-fluid" src="http://placehold.it/900x400" alt="">
+              <img class="card-img-top img-fluid" src="{{ plan.hero_image }}" alt="">
               <div class="card-body">
                 <h3 class="card-title">{{ plan.title }}</h3>
                 <h4>R${{ plan.price }}</h4>
                 <p class="card-text">{{ plan.description }}</p>
               </div>
             </div>
+
           {% else %}
+
             <div class="card mt-4">
               <div class="card h-100">
                   <div class="card-body">
@@ -32,6 +35,7 @@
                   </div>
                 </div>
             </div>
+
           {% endif %}
 
         </div>

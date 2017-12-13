@@ -135,7 +135,9 @@ def setup_development_data(app):
                       period=1,
                       is_public=True,
                       cpu_model='CPU 2 Cores 2.0',
-                      os_name='Linux')
+                      os_name='Linux',
+                      hero_image="https://i.imgur.com/ZVunLlo.png",
+                      thumbnail="https://i.imgur.com/IBxTPUs.jpg")
 
         get_or_create(db.session, Plan,
                       title='Plano intermediário',
@@ -144,7 +146,9 @@ def setup_development_data(app):
                       period=1,
                       is_public=True,
                       cpu_model='CPU 4 Cores 2.0',
-                      os_name='Linux')
+                      os_name='Linux',
+                      hero_image="https://i.imgur.com/jMpKAaJ.png",
+                      thumbnail="https://i.imgur.com/gT83VXZ.jpg")
 
         get_or_create(db.session, Plan,
                       title='Plano avançado',
@@ -153,7 +157,9 @@ def setup_development_data(app):
                       period=1,
                       is_public=True,
                       cpu_model='CPU 4 Cores 2.0',
-                      os_name='Linux')
+                      os_name='Linux',
+                      hero_image="https://i.imgur.com/jXdehmz.jpg",
+                      thumbnail="https://i.imgur.com/YJChIXK.jpg")
 
         # Commit changes
         db.session.commit()

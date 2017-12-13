@@ -36,7 +36,7 @@
 
                 <div class="carousel-item {% if loop.index == 1 %} active {% endif %}">
                   <a href="{{ url_for('default.show_item', item_name=plan.title) }}">
-                    <img class="d-block img-fluid" src="http://placehold.it/900x350" alt="{{ plan.title }}">
+                    <img class="d-block img-fluid" src="{{ plan.hero_image }}" alt="{{ plan.title }}">
                     <div class="carousel-caption">
                       <p>{{ plan.title }}</p>
                     </div>
@@ -61,32 +61,32 @@
 
           <div class="row">
 
-          {% for plan in plans %}
+            {% for plan in plans %}
 
-            <div class="col-lg-4 col-md-6 mb-4">
-              <div class="card h-100">
-                <a href="{{ url_for('default.show_item', item_name=plan.title) }}"><img class="card-img-top" src="http://placehold.it/700x400" alt=""></a>
-                <div class="card-body">
-                  <h4 class="card-title">
-                    <a href="{{ url_for('default.show_item', item_name=plan.title) }}">{{ plan.title }}</a>
-                  </h4>
-                  <h5>R${{ plan.price }}</h5>
-                  <p class="card-text">{{ plan.description }}</p>
+              <div class="col-lg-4 col-md-6 mb-4">
+                <div class="card h-100">
+                  <a href="{{ url_for('default.show_item', item_name=plan.title) }}"><img class="card-img-top" src="{{ plan.thumbnail }}" alt=""></a>
+                  <div class="card-body">
+                    <h4 class="card-title">
+                      <a href="{{ url_for('default.show_item', item_name=plan.title) }}">{{ plan.title }}</a>
+                    </h4>
+                    <h5>R${{ plan.price }}</h5>
+                    <p class="card-text">{{ plan.description }}</p>
+                  </div>
                 </div>
               </div>
-            </div>
 
-          {% else %}
+            {% else %}
 
-            <div class="col-lg-12 space-up">
-              <div class="card h-100">
-                <div class="card-body">
-                  <h4 class="card-title">Nenhum plano disponível.</h4>
+              <div class="col-lg-12 space-up">
+                <div class="card h-100">
+                  <div class="card-body">
+                    <h4 class="card-title">Nenhum plano disponível.</h4>
+                  </div>
                 </div>
               </div>
-            </div>
 
-          {% endfor %}
+            {% endfor %}
 
           </div>
 
