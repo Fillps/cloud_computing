@@ -83,6 +83,9 @@ class Plan(db.Model):
         self.slug_url = slugify(value)
         return value
 
+    def __str__(self):
+        return self.title
+
 
 class ResourceRequests(db.Model):
     id = db.Column(db.Integer(), primary_key=True)
@@ -155,7 +158,7 @@ class Os(db.Model):
 class PlanResource:
     """Base class of PlanGpu, PlanRam, PlanHd. Declares common attributes and functions shared by this classes."""
     backref_plan = 'plan_comps'
-    quantity = db.Column(db.Integer)
+    quantity = db.Column(db.Integer, default=1)
 
     @declared_attr
     def plan_id(self):
@@ -198,6 +201,10 @@ class CreditCard(db.Model):
 
     users = db.relationship('User', backref=db.backref('credit_cards'))
 
+    def __str__(self):
+        number_str = repr(self.number)
+        return '****' + number_str[len(number_str) - 4:]
+
 
 class Purchase(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -206,9 +213,9 @@ class Purchase(db.Model):
     plan_id = db.Column(db.Integer, db.ForeignKey('plan.id'), nullable=False)
     date = db.Column(db.DateTime, server_default=func.now())
 
-    user = db.relationship('User', backref=db.backref('purchases'))
-    credit_card = db.relationship('CreditCard', backref=db.backref('purchases'))
-    plan = db.relationship('Plan', backref=db.backref('purchases'))
+    user = db.relationship('User', backref=db.backref('purchase'))
+    credit_card = db.relationship('CreditCard', backref=db.backref('purchase'))
+    plan = db.relationship('Plan', backref=db.backref('purchase'))
 
 
 @event.listens_for(Purchase, 'after_insert')
@@ -582,7 +589,7 @@ class UserPlan(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     plan_id = db.Column(db.Integer, db.ForeignKey('plan.id'), nullable=False)
     first_purchase_id = db.Column(db.Integer, db.ForeignKey('purchase.id'), nullable=False)
-    server_id = db.Column(db.Integer, db.ForeignKey('server.id'), nullable=False)
+    server_id = db.Column(db.Integer, db.ForeignKey('server.id'))
     start_date = db.Column(db.DateTime, default=func.now())
     end_date = db.Column(db.DateTime, default=func.now())
 

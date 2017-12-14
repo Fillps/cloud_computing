@@ -5,6 +5,7 @@ from flask_admin import expose
 from flask_admin.babel import gettext
 from flask_admin.contrib import sqla
 from flask_admin.contrib.sqla import validators
+from flask_admin.form import rules
 from flask_admin.helpers import get_redirect_target
 from flask_admin.model.helpers import get_mdict_item_or_list
 from flask_security import current_user
@@ -12,7 +13,7 @@ from markupsafe import Markup
 from sqlalchemy import func
 from werkzeug.utils import redirect
 
-from cloud_computing.model.models import ResourceRequests, CreditCard, Purchase
+from cloud_computing.model.models import ResourceRequests, CreditCard, Purchase, UserPlan
 from cloud_computing.utils.util import CKTextAreaField
 
 USER_RESOURCES_REQUEST_MESSAGE_LENGTH = 50
@@ -29,6 +30,15 @@ class UserModelView(sqla.ModelView):
 
 class UserPlanView(UserModelView):
     can_create = True
+    column_list = ['plan', 'server', 'start_date', 'end_date']
+
+    def get_count_query(self):
+        """Count of the requests with the user_id equal to the current user."""
+        return self.session.query(func.count(UserPlan.id)).filter(UserPlan.user_id == current_user.id)
+
+    def get_query(self):
+        """Select only the requests with the user_id equal to the current user."""
+        return super(UserPlanView, self).get_query().filter(UserPlan.user_id == current_user.id)
 
 
 class UserServerView(UserModelView):
@@ -39,9 +49,11 @@ class PurchaseUser(UserModelView):
     can_view_details = True
     can_edit = False
     can_create = True
+
     column_list = ['id', 'plan', 'credit_cards', 'plan.price']
-    column_labels = dict(id='Id', plans='Planos', credit_cards='Cartões de Crédito')
-    form_columns = ['plan', 'credit_card', 'user']
+    column_labels = dict(id='Id', plan='Plano', credit_cards='Cartões de Crédito')
+
+    form_columns = ['plan', 'credit_card']
 
     def get_count_query(self):
         """Count of the requests with the user_id equal to the current user."""
@@ -50,6 +62,9 @@ class PurchaseUser(UserModelView):
     def get_query(self):
         """Select only the requests with the user_id equal to the current user."""
         return super(PurchaseUser, self).get_query().filter(Purchase.user_id == current_user.id)
+
+    def on_model_change(self, form, model, is_created):
+        model.user_id = current_user.id
 
 
 class CreditCardUser(UserModelView):
