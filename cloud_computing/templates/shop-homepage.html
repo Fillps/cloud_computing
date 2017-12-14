@@ -35,7 +35,7 @@
                 {% for plan in plans[0:3] %}
 
                 <div class="carousel-item {% if loop.index == 1 %} active {% endif %}">
-                  <a href="{{ url_for('default.show_item', item_name=plan.title) }}">
+                  <a href="{{ url_for('default.show_item', slug_url=plan.slug_url) }}">
                     <img class="d-block img-fluid" src="{{ plan.hero_image }}" alt="{{ plan.title }}">
                     <div class="carousel-caption">
                       <p>{{ plan.title }}</p>
@@ -65,10 +65,10 @@
 
               <div class="col-lg-4 col-md-6 mb-4">
                 <div class="card h-100">
-                  <a href="{{ url_for('default.show_item', item_name=plan.title) }}"><img class="card-img-top" src="{{ plan.thumbnail }}" alt=""></a>
+                  <a href="{{ url_for('default.show_item', slug_url=plan.slug_url) }}"><img class="card-img-top" src="{{ plan.thumbnail }}" alt=""></a>
                   <div class="card-body">
                     <h4 class="card-title">
-                      <a href="{{ url_for('default.show_item', item_name=plan.title) }}">{{ plan.title }}</a>
+                      <a href="{{ url_for('default.show_item', slug_url=plan.slug_url) }}">{{ plan.title }}</a>
                     </h4>
                     <h5>R${{ plan.price }}</h5>
                     <p class="card-text">{{ plan.description }}</p>

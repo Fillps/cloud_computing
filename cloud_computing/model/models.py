@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from slugify import slugify
 from flask_security import RoleMixin, UserMixin
 from sqlalchemy import func
 from sqlalchemy.ext.declarative import declared_attr
@@ -62,6 +63,7 @@ class Plan(db.Model):
     cpu_model = db.Column(db.Text, db.ForeignKey('cpu.model'), nullable=False)
     os_name = db.Column(db.Text, db.ForeignKey('os.name'), nullable=False)
     shop_description = db.Column(db.Text)
+    slug_url = db.Column(db.Text)
     thumbnail = db.Column(db.Text, default='http://placehold.it/700x400')
     hero_image = db.Column(db.Text, default='http://placehold.it/900x400')
 
@@ -70,6 +72,12 @@ class Plan(db.Model):
     gpu = db.relationship('Gpu', secondary='plan_gpu')
     ram = db.relationship('Ram', secondary='plan_ram')
     hd = db.relationship('Hd', secondary='plan_hd')
+
+    def __init__(self, *args, **kwargs):
+        """Creates the slug url, used on the item detail page."""
+        if 'slug_url' not in kwargs:
+            kwargs['slug_url'] = slugify(kwargs.get('title', ''))
+        super().__init__(*args, **kwargs)
 
 
 class ResourceRequests(db.Model):
