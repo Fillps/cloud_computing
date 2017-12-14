@@ -36,11 +36,11 @@
                 <a class="nav-link" href="{{ url_for('admin.index') }}">Gerenciar</a>
               </li>
               <li class="nav-item">  
-                <a class="nav-link" href="{{ url_for_security('logout') }}">Logout</a>
+                <a class="nav-link" href="{{ url_for_security('logout') }}">Sair</a>
               </li>
             {% else %}
               <li class="nav-item">  
-                <a class="nav-link" href="{{ url_for_security('login') }}">Login</a>
+                <a class="nav-link" href="{{ url_for_security('login') }}">Entrar</a>
               </li>
             {% endif %}
             </li>

@@ -13,7 +13,6 @@ from cloud_computing.utils import db_utils
 from cloud_computing.view.register import ExtendedRegisterForm
 from cloud_computing.view.view import default_blueprint
 
-
 class AppFactory:
     """Builds the app."""
     def __init__(self, config_filename='../configs/production.py'):
@@ -72,8 +71,8 @@ class AppFactory:
         admin.add_view(_user.ResourceRequestsUser(
             models.ResourceRequests,
             db.session,
-            endpoint='resource-requests-user',
-			name='Requisitar Recurso'))
+            endpoint='resource-requests-user', 
+            name='Requisitar Recurso'))
 
     def __config_database_and_security(self):
         db.init_app(self.app)
