@@ -225,7 +225,7 @@ def purchase_after_insert(maper, connection, target):
             connection.execute(UserPlan.__table__.update()
                                .where(UserPlan.__table__.c.id==user_plan.id)
                                .values(end_date=add_months(user_plan.end_date, target.plan.period)))
-            
+
 
 class Server(db.Model):
     id = db.Column(db.Integer, primary_key=True)

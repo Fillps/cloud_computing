@@ -34,7 +34,7 @@ class PurchaseUser(UserModelView):
     can_view_details = True
     can_edit = False
     can_create = True
-    column_list = ['id', 'plans', 'credit_cards', 'plan.price']
+    column_list = ['id', 'plan', 'credit_cards', 'plan.price']
     column_labels = dict(id='Id', plans='Planos', credit_cards='Cartões de Crédito')
     form_columns = ['plan', 'credit_card', 'user']
 
