@@ -582,6 +582,7 @@ class UserPlan(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     plan_id = db.Column(db.Integer, db.ForeignKey('plan.id'), nullable=False)
     first_purchase_id = db.Column(db.Integer, db.ForeignKey('purchase.id'), nullable=False)
+    server_id = db.Column(db.Integer, db.ForeignKey('server.id'), nullable=False)
     start_date = db.Column(db.DateTime, default=func.now())
     end_date = db.Column(db.DateTime, default=func.now())
 
@@ -589,6 +590,7 @@ class UserPlan(db.Model):
     user = db.relationship('User', backref=db.backref('user_plan'))
     first_purchase = db.relationship('Purchase', backref=db.backref('first_user_plan'))
     purchases = db.relationship('Purchase', secondary='plan_purchase', backref=db.backref('user_plan'))
+    server = db.relationship('Server', backref=db.backref('user_plans'))
 
 
 @event.listens_for(UserPlan, 'after_insert')
@@ -601,4 +603,15 @@ def purchase_after_insert(maper, connection, target):
 class PlanPurchase(db.Model):
     user_plan_id = db.Column(db.Integer, db.ForeignKey('user_plan.id'), primary_key=True)
     purchase_id = db.Column(db.Integer, db.ForeignKey('purchase.id'), primary_key=True)
+
+
+class UserServer(db.Model):
+    server_id = db.Column(db.Integer, db.ForeignKey('server.id'), nullable=False, primary_key=True)
+    user_plan_id = db.Column(db.Integer, db.ForeignKey('user_plan.id'), nullable=False, primary_key=True)
+    date = db.Column(db.DateTime, default=func.now())
+    cpu_usage = db.Column(db.Float)
+    disk_usage = db.Column(db.Float)
+
+    server = db.relationship('Server', backref=db.backref('user_servers'))
+    user_plan = db.relationship('UserPlan', backref=db.backref('user_servers'))
 
