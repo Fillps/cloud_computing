@@ -4,13 +4,16 @@ from slugify import slugify
 from flask_security import RoleMixin, UserMixin
 from sqlalchemy import func, event
 from sqlalchemy.ext.declarative import declared_attr
-from sqlalchemy.orm import validates
+import datetime
 from wtforms import ValidationError
+from sqlalchemy.orm import validates, Session
 
 from cloud_computing.model.database import db
-from cloud_computing.utils.db_utils import get
+from cloud_computing.utils.db_utils import get, get_or_create
 
 # Create a table to support many-to-many relationship between Users and Roles
+from cloud_computing.utils.util import add_months
+
 roles_users = db.Table(
     'roles_users',
     db.Column('user_id', db.Integer(), db.ForeignKey('user.id')),
@@ -201,11 +204,30 @@ class Purchase(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     credit_card_id = db.Column(db.Integer, db.ForeignKey('credit_card.id'), nullable=False)
     plan_id = db.Column(db.Integer, db.ForeignKey('plan.id'), nullable=False)
+    date = db.Column(db.DateTime, server_default=func.now())
 
-    users = db.relationship('User', backref=db.backref('purchases'))
-    credit_cards = db.relationship('CreditCard', backref=db.backref('purchases'))
-    plans = db.relationship('Plan', backref=db.backref('purchases'))
+    user = db.relationship('User', backref=db.backref('purchases'))
+    credit_card = db.relationship('CreditCard', backref=db.backref('purchases'))
+    plan = db.relationship('Plan', backref=db.backref('purchases'))
 
+
+@event.listens_for(Purchase, 'after_insert')
+def purchase_after_insert(maper, connection, target):
+    """Creates or updates a UserPlan and updates the end_date by the plan period."""
+    @event.listens_for(Session, "after_flush", once=True)
+    def receive_after_flush(session, context):
+        user_plan = UserPlan.query.filter_by(user_id=target.user_id,
+                                             plan_id=target.plan_id).first()
+        if user_plan is None:
+            user_plan = UserPlan(user_id=target.user_id, plan_id=target.plan_id, first_purchase_id=target.id)
+            user_plan.end_date = add_months(datetime.datetime.now(), target.plan.period)
+            session.add(user_plan)
+        else:
+            session.add(PlanPurchase(user_plan_id=user_plan.id, purchase_id=target.id))
+            connection.execute(UserPlan.__table__.update()
+                               .where(UserPlan.__table__.c.id==user_plan.id)
+                               .values(end_date=add_months(user_plan.end_date, target.plan.period)))
+            
 
 class Server(db.Model):
     """Definition of Server"""
@@ -554,4 +576,29 @@ def server_hd_before_delete(maper, connection, target):
                            .where(Hd.__table__.c.model == target.hd_model)
                            .values(available=target.hd.available + target.quantity))
 
+
+class UserPlan(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    plan_id = db.Column(db.Integer, db.ForeignKey('plan.id'), nullable=False)
+    first_purchase_id = db.Column(db.Integer, db.ForeignKey('purchase.id'), nullable=False)
+    start_date = db.Column(db.DateTime, default=func.now())
+    end_date = db.Column(db.DateTime, default=func.now())
+
+    plan = db.relationship('Plan', backref=db.backref('user_plan'))
+    user = db.relationship('User', backref=db.backref('user_plan'))
+    first_purchase = db.relationship('Purchase', backref=db.backref('first_user_plan'))
+    purchases = db.relationship('Purchase', secondary='plan_purchase', backref=db.backref('user_plan'))
+
+
+@event.listens_for(UserPlan, 'after_insert')
+def purchase_after_insert(maper, connection, target):
+    @event.listens_for(Session, "after_flush", once=True)
+    def receive_after_flush(session, context):
+        db.session.add(PlanPurchase(user_plan_id=target.id, purchase_id=target.first_purchase_id))
+
+
+class PlanPurchase(db.Model):
+    user_plan_id = db.Column(db.Integer, db.ForeignKey('user_plan.id'), primary_key=True)
+    purchase_id = db.Column(db.Integer, db.ForeignKey('purchase.id'), primary_key=True)
 

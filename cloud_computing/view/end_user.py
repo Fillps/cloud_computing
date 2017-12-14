@@ -27,12 +27,17 @@ class UserModelView(sqla.ModelView):
         return current_user.has_role('end-user')
 
 
+class UserPlanView(UserModelView):
+    can_create = True
+
+
 class PurchaseUser(UserModelView):
     can_view_details = True
     can_edit = False
-    can_create = False
-    column_list = ['id', 'plans', 'credit_cards']
+    can_create = True
+    column_list = ['id', 'plans', 'credit_cards', 'plan.price']
     column_labels = dict(id='Id', plans='Planos', credit_cards='Cartões de Crédito')
+    form_columns = ['plan', 'credit_card', 'user']
 
     def get_count_query(self):
         """Count of the requests with the user_id equal to the current user."""
