@@ -3,7 +3,7 @@ import calendar
 import datetime
 
 from sqlalchemy import func
-from wtforms import TextAreaField, IntegerField
+from wtforms import TextAreaField, IntegerField, FloatField
 from wtforms.widgets import TextArea
 
 
