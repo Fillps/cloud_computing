@@ -78,8 +78,12 @@ class ResourceRequestsUser(UserModelView):
     column_searchable_list = ['id', 'message_date', 'message', 'answer_date', 'answer']
     column_details_list = ['id', 'message_date', 'message', 'admin_rel', 'answer_date', 'answer']
     form_excluded_columns = ['message_date', 'answer_date', 'answer', 'id', 'admin_rel', 'user_rel']
-    column_labels = dict(id='id', message_date='Data da Mensagem', admin_rel='Administrador', 
-	                     answer_date='Data da Resposta', answer='Resposta')
+    column_labels = dict(
+        id='id',
+        message_date='Data da Mensagem',
+        admin_rel='Administrador',
+        answer_date='Data da Resposta',
+        answer='Resposta')
 
     # CKeditor - Text editor for the answer
     extra_js = ['//cdn.ckeditor.com/4.6.0/standard/ckeditor.js']
@@ -176,4 +180,4 @@ class ResourceRequestsUser(UserModelView):
             model.user_id = current_user.id
             model.message_date = func.now()
         else:
-            raise validators.ValidationError('Answer cannot be empty!')
+            raise validators.ValidationError('A resposta não pode ser vazia!')
