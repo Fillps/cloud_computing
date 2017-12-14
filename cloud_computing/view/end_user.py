@@ -30,6 +30,10 @@ class UserPlanView(UserModelView):
     can_create = True
 
 
+class UserServerView(UserModelView):
+    can_create = True
+
+
 class PurchaseUser(UserModelView):
     can_view_details = True
     can_edit = False
