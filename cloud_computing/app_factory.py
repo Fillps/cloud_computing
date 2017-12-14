@@ -89,13 +89,6 @@ class AppFactory:
                                      db.session,
                                      category='Servidores'))
 
-        admin.add_view(_user.CreditCardUser(models.CreditCard, db.session, name='Cartões de Crédito'))
-        admin.add_view(_user.PurchaseUser(models.Purchase, db.session, name='Compras'))
-        admin.add_view(_user.ResourceRequestsUser(
-            models.ResourceRequests,
-            db.session,
-            endpoint='resource-requests-user',
-            name='Requisitar Recurso'))
         admin.add_view(_adm.ServerAdmin(
             models.Server,
             db.session,
@@ -114,6 +107,15 @@ class AppFactory:
             admin.add_view(_adm.ServerHdAdmin(models.ServerHd,
                                               db.session,
                                               category='Servidores'))
+
+        admin.add_view(_user.UserPlanView(models.UserPlan, db.session))
+        admin.add_view(_user.CreditCardUser(models.CreditCard, db.session, name='Cartões de Crédito'))
+        admin.add_view(_user.PurchaseUser(models.Purchase, db.session, name='Compras'))
+        admin.add_view(_user.ResourceRequestsUser(
+            models.ResourceRequests,
+            db.session,
+            endpoint='resource-requests-user',
+            name='Requisitar Recurso'))
 
     def __config_database_and_security(self):
         db.init_app(self.app)
