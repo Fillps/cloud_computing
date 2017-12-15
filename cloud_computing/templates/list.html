@@ -1,5 +1,6 @@
 {% extends 'admin/model/list.html' %}
-{% import 'actions.html' as actionlib1 with context %}
+{% import 'admin/local_actions.html' as actionlib1 with context %}
+{% import 'admin/local_layout.html' as layoutlib with context %}
 
 {% block model_menu_bar %}
     <ul class="nav nav-tabs actions-nav">
@@ -10,7 +11,7 @@
         {% if admin_view.can_create %}
         <li>
           {%- if admin_view.create_modal -%}
-            {{ lib.add_modal_button(url=get_url('.create_view', url=return_url, modal=True), title=_gettext('Create New Record'), content=_gettext('Create')) }}
+            {{ lib.add_modal_button(url=get_url('.create_view', url=return_url, modal=True), title=_gettext('Inserir Novo Registro'), content=_gettext('Inserir')) }}
           {% else %}
             <a href="{{ get_url('.create_view', url=return_url) }}" title="{{ _gettext('Inserir Novo Registro') }}">{{ _gettext('Inserir') }}</a>
           {%- endif -%}
@@ -43,13 +44,110 @@
 
         {% if search_supported %}
         <li>
-            {{ model_layout.search_form() }}
+            {{ layoutlib.search_form() }}
         </li>
         {% endif %}
         {% block model_menu_bar_after_filters %}{% endblock %}
     </ul>
 {% endblock %}
 
-{% block list_row_actions %} 
-    {{ super() }} 
+{% block model_list_table %}
+    <table class="table table-striped table-bordered table-hover model-list">
+        <thead>
+            <tr>
+                {% block list_header scoped %}
+                    {% if actions %}
+                    <th class="list-checkbox-column">
+                        <input type="checkbox" name="rowtoggle" class="action-rowtoggle" title="{{ _gettext('Selecionar todos registros') }}" />
+                    </th>
+                    {% endif %}
+                    {% block list_row_actions_header %}
+                    <th class="col-md-1">&nbsp;</th>
+                    {% endblock %}
+                    {% set column = 0 %}
+                    {% for c, name in list_columns %}
+                    <th class="column-header">
+                        {% if admin_view.is_sortable(c) %}
+                            {% if sort_column == column %}
+                                <a href="{{ sort_url(column, True) }}" title="{{ _gettext('Ordenar por %(name)s', name=name) }}">
+                                    {{ name }}
+                                    {% if sort_desc %}
+                                        <span class="glyphicon glyphicon-chevron-up"></span>
+                                    {% else %}
+                                        <span class="glyphicon glyphicon-chevron-down"></span>
+                                    {% endif %}
+                                </a>
+                            {% else %}
+                                <a href="{{ sort_url(column) }}" title="{{ _gettext('Ordenar por %(name)s', name=name) }}">{{ name }}</a>
+                            {% endif %}
+                        {% else %}
+                            {{ name }}
+                        {% endif %}
+                        {% if admin_view.column_descriptions.get(c) %}
+                            <a class="glyphicon glyphicon-question-sign"
+                               title="{{ admin_view.column_descriptions[c] }}"
+                               href="javascript:void(0)" data-role="tooltip"
+                            ></a>
+                        {% endif %}
+                    </th>
+                    {% set column = column + 1 %}
+                    {% endfor %}
+                {% endblock %}
+            </tr>
+        </thead>
+        {% for row in data %}
+        <tr>
+            {% block list_row scoped %}
+                {% if actions %}
+                <td>
+                    <input type="checkbox" name="rowid" class="action-checkbox" value="{{ get_pk_value(row) }}" title="{{ _gettext('Selecionar registro') }}" />
+                </td>
+                {% endif %}
+                {% block list_row_actions_column scoped %}
+                <td>
+                    {% block list_row_actions scoped %}
+                        {%- if admin_view.can_edit -%}
+                        <a class="icon" href="{{ get_url('.edit_view', id=get_pk_value(row), url=return_url) }}" title="{{ _gettext('Editar registro') }}">
+                            <span class="glyphicon glyphicon-pencil"></span>
+                        </a>
+                        {%- endif -%}
+                        {%- if admin_view.can_delete -%}
+                        <form class="icon" method="POST" action="{{ get_url('.delete_view') }}">
+                            {{ delete_form.id(value=get_pk_value(row)) }}
+                            {{ delete_form.url(value=return_url) }}
+                            {{ delete_form.csrf_token }}
+                            <button onclick="return confirm('{{ _gettext('Você tem certeza que deseja excluir esse registro?') }}');" title="Excluir registro">
+                                <span class="glyphicon glyphicon-trash"></span>
+                            </button>
+                        </form>
+                        {%- endif -%}
+                    {% endblock %}
+                </td>
+                {% endblock %}
+                {% for c, name in list_columns %}
+                    {% if admin_view.is_editable(c) %}
+                        {% if form.csrf_token %}
+                        <td>{{ form[c](pk=get_pk_value(row), value=get_value(row, c), csrf=form.csrf_token._value()) }}</td>
+                        {% else %}
+                        <td>{{ form[c](pk=get_pk_value(row), value=get_value(row, c)) }}</td>
+                        {% endif %}
+                    {% else %}
+                    <td>{{ get_value(row, c) }}</td>
+                    {% endif %}
+                {% endfor %}
+            {% endblock %}
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="999">
+                {% block empty_list_message %}
+                <div class="text-center">
+                    {{ admin_view.get_empty_list_message() }}
+                </div>
+                {% endblock %}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    {{ lib.pager(page, num_pages, pager_url) }}
 {% endblock %}
