@@ -269,6 +269,14 @@ class Server(db.Model):
         return value
 
 
+@event.listens_for(Server, 'before_insert')
+def server_before_insert(maper, connection, target):
+    """Initialize the available slots equal to total_slots."""
+    target.ram_slot_available = target.ram_slot_total
+    target.gpu_slot_available = target.gpu_slot_total
+    target.hd_slot_available = target.hd_slot_total
+
+
 class ServerResource:
     """Definition of ServerResource"""
 
@@ -545,4 +553,5 @@ def server_hd_before_delete(maper, connection, target):
         connection.execute(Hd.__table__.update()
                            .where(Hd.__table__.c.model == target.hd_model)
                            .values(available=target.hd.available + target.quantity))
+
 
