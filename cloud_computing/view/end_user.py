@@ -82,6 +82,7 @@ class ResourceRequestsUser(UserModelView):
     form_excluded_columns = ['message_date', 'answer_date', 'answer', 'id', 'admin_rel', 'user_rel']
     column_labels = dict(id='id', message_date='Data da Mensagem', admin_rel='Administrador', 
                          answer_date='Data da Resposta', answer='Resposta')
+    list_template = 'list.html'
 
     # CKeditor - Text editor for the answer
     extra_js = ['//cdn.ckeditor.com/4.6.0/standard/ckeditor.js']
