@@ -188,10 +188,10 @@ def setup_development_data(app):
             get_or_create(db.session, Server,
                           id=1500,
                           cpu_model='CPU 4 Cores 2.0',
-                          n_slot_ram=10,
+                          ram_slot_total=10,
                           ram_max=160,
-                          n_slot_gpu=10,
-                          n_slot_hd=100,
+                          gpu_slot_total=10,
+                          hd_slot_total=100,
                           os_name='Linux')
         # Commit changes
         db.session.commit()

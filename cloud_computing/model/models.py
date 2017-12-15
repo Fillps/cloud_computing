@@ -2,9 +2,10 @@
 
 from slugify import slugify
 from flask_security import RoleMixin, UserMixin
-from sqlalchemy import func
+from sqlalchemy import func, event
 from sqlalchemy.ext.declarative import declared_attr
-from sqlalchemy.orm import validates
+from sqlalchemy.orm import validates, mapper
+from wtforms import ValidationError
 
 from cloud_computing.model.database import db
 from cloud_computing.utils.db_utils import get
@@ -104,11 +105,11 @@ class Resource:
     def update_total(self, key, value):
         """On adding new components, update the available components."""
         if value < 0:
-            raise ValueError("O valor não pode ser menor que zero.")
+            raise ValidationError("O valor não pode ser menor que zero.")
         elif self.total is None:
             self.available = value
         else:
-            self.available = self.available + value-self.total
+            self.available += value - self.total
         return value
 
     def __str__(self):
@@ -117,7 +118,7 @@ class Resource:
     @validates('price')
     def check_price(self, key, value):
         if value < 0:
-            raise ValueError("O preço não pode ser menor que zero.")
+            raise ValidationError("O preço não pode ser menor que zero.")
         else:
             return value
 
@@ -212,14 +213,17 @@ class Server(db.Model):
     cpu_model = db.Column(db.Text, db.ForeignKey('cpu.model'), nullable=False)
     cores_available = db.Column(db.Integer, default=0)
     os_name = db.Column(db.Text, db.ForeignKey('os.name'))
-    n_slot_ram = db.Column(db.Integer, nullable=False)
+    ram_slot_total = db.Column(db.Integer, nullable=False)
+    ram_slot_available = db.Column(db.Integer)
     ram_max = db.Column(db.Integer, nullable=False)
     ram_total = db.Column(db.Integer, default=0)
     ram_available = db.Column(db.Integer, default=0)
-    n_slot_gpu = db.Column(db.Integer, nullable=False)
+    gpu_slot_total = db.Column(db.Integer, nullable=False)
+    gpu_slot_available = db.Column(db.Integer)
     gpu_total = db.Column(db.Integer, default=0)
     gpu_available = db.Column(db.Integer, default=0)
-    n_slot_hd = db.Column(db.Integer, nullable=False)
+    hd_slot_total = db.Column(db.Integer, nullable=False)
+    hd_slot_available = db.Column(db.Integer)
     hd_total = db.Column(db.Integer, default=0)
     hd_available = db.Column(db.Integer, default=0)
     ssd_total = db.Column(db.Integer, default=0)
@@ -238,17 +242,26 @@ class Server(db.Model):
         if self.cpu_model is None:
             cores_available = new_cpu.cores
         elif self.cpu.available < 1:
-            raise ValueError("Não existe CPU disponível.")
+            raise ValidationError("Não existe CPU disponível.")
         else:
             cores_available = new_cpu.cores + self.cores_available - self.cpu.cores
         if cores_available < 0:
             if key != -1:
-                raise ValueError("O uso de cores está maior do que o disponível. "
-                                 "Tente diminuir a utilização de cores ou aumente os cores do cpu a ser adicionado.")
+                raise ValidationError("O uso de cores está maior do que o disponível. "
+                                      "Tente diminuir a utilização de cores ou aumente "
+                                      "os cores do cpu a ser adicionado.")
         else:
             self.cores_available = cores_available
             new_cpu.available -= 1
             return value
+
+
+@event.listens_for(Server, 'before_insert')
+def server_before_insert(maper, connection, target):
+    """Initialize the available slots equal to total_slots."""
+    target.ram_slot_available = target.ram_slot_total
+    target.gpu_slot_available = target.gpu_slot_total
+    target.hd_slot_available = target.hd_slot_total
 
 
 class ServerResource:
@@ -278,24 +291,73 @@ class ServerGpu(db.Model, ServerResource):
 
     @validates('quantity')
     def update_quantity(self, key, value):
+        """
+            When quantity is updated, updates the total_capacity, available_capacity, gpu.available
+            and server.gpu_slot_available.
+        """
         if value < 1:
-            raise ValueError('A quantidade precisa ser maior que zero.')
-            return
+            raise ValidationError('A quantidade precisa ser maior que zero.')
         elif self.server_id is None:
             return value
         elif self.gpu.available < value - self.quantity:
-            raise ValueError("Não existem recursos diponíveis. Tente diminuir a quantidade ou adicionar novos recursos.")
+            raise ValidationError(
+                "Não existem recursos diponíveis. Tente diminuir a quantidade ou adicionar novos recursos.")
+        elif self.server.gpu_slot_available < value - self.quantity:
+            raise ValidationError(
+                "Não existem slots diponíveis. Tente diminuir a quantidade de recursos.")
 
         net_capacity = self.gpu.ram * value - self.gpu.ram * self.quantity
 
         if self.available_capacity + net_capacity < 0:
-            raise ValueError("O uso do recurso está maior do que o disponível. Tente diminuir a utilização dos recursos"
-                             " ou aumente a quantiadde de recursos a serem adicionados.")
+            raise ValidationError(
+                "O uso do recurso está maior do que o disponível. Tente diminuir a utilização dos recursos"
+                " ou aumente a quantiadde de recursos a serem adicionados.")
         else:
             self.total_capacity += net_capacity
             self.available_capacity += net_capacity
-            self.gpu.available += self.quantity - value
+            self.gpu.available -= value - self.quantity
+            self.server.gpu_slot_available -= value - self.quantity
             return value
+
+
+@event.listens_for(ServerGpu, 'before_insert')
+def server_gpu_before_insert(maper, connection, target):
+    """
+        Before the insert, updates the total_capacity, available_capacity, gpu.available
+        and server.gpu_slot_available based on the quantity.
+    """
+    if target.gpu.available < target.quantity:
+        raise ValidationError("Não existem recursos diponíveis. Tente diminuir "
+                              "a quantidade ou adicionar novos recursos.")
+    elif target.server.gpu_slot_available < target.quantity:
+        raise ValidationError("Não existem slots no servidor diponíveis."
+                              "Tente diminuir a quantidade.")
+    else:
+        target.available_capacity = target.gpu.ram * target.quantity
+        target.total_capacity = target.gpu.ram * target.quantity
+        connection.execute(Server.__table__.update()
+                           .where(Server.__table__.c.id == target.server_id)
+                           .values(gpu_slot_available=target.server.gpu_slot_available - target.quantity))
+        connection.execute(Gpu.__table__.update()
+                           .where(Gpu.__table__.c.model == target.gpu_model)
+                           .values(available=target.gpu.available - target.quantity))
+
+
+@event.listens_for(ServerGpu, 'before_delete')
+def server_gpu_before_delete(maper, connection, target):
+    """
+        Before the delete, updates the gpu.available and server.gpu_slot_available
+        based on the quantity.
+    """
+    if target.available_capacity < target.total_capacity:
+        raise ValidationError('Erro! O GPU a ser deletado ainda está em uso!')
+    else:
+        connection.execute(Server.__table__.update()
+                           .where(Server.__table__.c.id == target.server_id)
+                           .values(gpu_slot_available=target.server.ram_slots_available + target.quantity))
+        connection.execute(Gpu.__table__.update()
+                           .where(Gpu.__table__.c.model == target.gpu_model)
+                           .values(available=target.gpu.available + target.quantity))
 
 
 class ServerRam(db.Model, ServerResource):
@@ -306,26 +368,77 @@ class ServerRam(db.Model, ServerResource):
 
     @validates('quantity')
     def update_quantity(self, key, value):
+        """
+            When quantity is updated, updates the server.ram_total, server.ram_available, ram.available
+            and server.ram_slot_available.
+        """
         if value < 1:
-            raise ValueError('A quantidade precisa ser maior que zero.')
-            return
+            raise ValidationError('A quantidade precisa ser maior que zero.')
         elif self.server_id is None:
             return value
         elif self.ram.available < value - self.quantity:
-            raise ValueError("Não existem recursos diponíveis. Tente diminuir a quantidade ou adicionar novos recursos.")
+            raise ValidationError(
+                "Não existem recursos diponíveis. Tente diminuir a quantidade ou adicionar novos recursos.")
+        elif self.server.ram_slot_available < value - self.quantity:
+            raise ValidationError(
+                "Não existem slots diponíveis. Tente diminuir a quantidade de recursos.")
 
-        current_capacity = self.ram.capacity * self.quantity
-        new_capacity = self.ram.capacity * value
-        net_capacity = new_capacity - current_capacity
+        net_capacity = self.ram.capacity * value - self.ram.capacity * self.quantity
 
         if self.server.ram_available + net_capacity < 0:
-            raise ValueError("O uso do recurso está maior do que o disponível. Tente diminuir a utilização dos recursos"
-                             " ou aumente a quantiadde de recursos a serem adicionados.")
+            raise ValidationError("O uso do recurso está maior do que o disponível. "
+                                  "Tente diminuir a utilização dos recursos ou aumente "
+                                  "a quantiadde de recursos a serem adicionados.")
         else:
             self.server.ram_total += net_capacity
             self.server.ram_available += net_capacity
-            self.ram.available += self.quantity - value
+            self.server.ram_slot_available -= value - self.quantity
+            self.ram.available -= value - self.quantity
             return value
+
+
+@event.listens_for(ServerRam, 'before_insert')
+def server_ram_before_insert(maper, connection, target):
+    """
+        Before the insert, updates the server.ram_total, server.ram_available, ram.available
+        and server.ram_slot_available based on the quantity.
+    """
+    if target.ram.available < target.quantity:
+        raise ValidationError("Não existem recursos diponíveis. Tente diminuir "
+                              "a quantidade ou adicionar novos recursos.")
+    elif target.server.ram_slot_available < target.quantity:
+        raise ValidationError("Não existem slots no servidor diponíveis."
+                              "Tente diminuir a quantidade.")
+    else:
+        added_capacity = target.ram.capacity * target.quantity
+        connection.execute(Server.__table__.update()
+                           .where(Server.__table__.c.id == target.server_id)
+                           .values(ram_total=target.server.ram_total + added_capacity,
+                                   ram_available=target.server.ram_available + added_capacity,
+                                   ram_slot_available=target.server.ram_slot_available - target.quantity))
+        connection.execute(Ram.__table__.update()
+                           .where(Ram.__table__.c.model == target.ram_model)
+                           .values(available=target.ram.available - target.quantity))
+
+
+@event.listens_for(ServerRam, 'before_delete')
+def server_ram_before_delete(maper, connection, target):
+    """
+        Before the delete, updates the server.ram_total, server.ram_available, ram.available
+        and server.ram_slot_available based on the quantity.
+    """
+    if target.quantity * target.ram.capacity > target.server.ram_available:
+        raise ValidationError('Erro! A RAM a ser deletada ainda está em uso!')
+    else:
+        removed_capacity = target.quantity * target.ram.capacity
+        connection.execute(Server.__table__.update()
+                           .where(Server.__table__.c.id == target.server_id)
+                           .values(ram_total=target.server.ram_total - removed_capacity,
+                                   ram_available=target.server.ram_available - removed_capacity,
+                                   ram_slot_available=target.server.ram_slot_available + target.quantity))
+        connection.execute(Ram.__table__.update()
+                           .where(Ram.__table__.c.model == target.ram_model)
+                           .values(available=target.ram.available + target.quantity))
 
 
 class ServerHd(db.Model, ServerResource):
@@ -336,30 +449,90 @@ class ServerHd(db.Model, ServerResource):
 
     @validates('quantity')
     def update_quantity(self, key, value):
+        """
+            When quantity is updated, updates the server.hd_total, server.hd_available,
+            server.ssd_total, server.ssd_available, hd.available and server.hd_slot_available.
+        """
         if value < 1:
-            raise ValueError('A quantidade precisa ser maior que zero.')
-            return
+            raise ValidationError('A quantidade precisa ser maior que zero.')
         elif self.server_id is None:
             return value
         elif self.hd.available < value - self.quantity:
-            raise ValueError("Não existem recursos diponíveis. Tente diminuir a quantidade ou adicionar novos recursos.")
+            raise ValidationError(
+                "Não existem recursos diponíveis. Tente diminuir a quantidade ou adicionar novos recursos.")
+        elif self.server.hd_slot_available < value - self.quantity:
+            raise ValidationError(
+                "Não existem slots diponíveis. Tente diminuir a quantidade de recursos.")
 
-        hd_capacity = self.hd.capacity
-        current_capacity = hd_capacity * self.quantity
-        new_capacity = hd_capacity * value
-        net_capacity = new_capacity - current_capacity
+        net_capacity = self.hd.capacity * value - self.hd.capacity * self.quantity
 
-        if (not self.hd.is_ssd and self.server.ram_available + net_capacity < 0) or \
-                (self.hd.is_ssd and self.server.ssd_available + net_capacity < 0):
-            raise ValueError("O uso do recurso está maior do que o disponível. Tente diminuir a utilização dos recursos"
-                             " ou aumente a quantiadde de recursos a serem adicionados.")
+        if (self.hd.is_ssd is True and self.server.ssd_available + net_capacity < 0) or \
+                (self.hd.is_ssd is False and self.server.hd_available + net_capacity < 0):
+            raise ValidationError(
+                "O uso do recurso está maior do que o disponível. Tente diminuir a utilização dos recursos"
+                " ou aumente a quantiadde de recursos a serem adicionados.")
         else:
-            if self.hd.is_ssd:
+            if self.hd.is_ssd is True:
                 self.server.ssd_total += net_capacity
                 self.server.ssd_available += net_capacity
             else:
                 self.server.hd_total += net_capacity
                 self.server.hd_available += net_capacity
-            self.hd.available += self.quantity - value
+            self.hd.available -= value - self.quantity
+            self.server.hd_slot -= value - self.quantity
             return value
 
+
+@event.listens_for(ServerHd, 'before_insert')
+def server_hd_before_insert(maper, connection, target):
+    """
+        Before the insert, updates the server.hd_total, server.hd_available, server.ssd_total,
+        server.ssd_available, hd.available and server.hd_slot_available based on the quantity.
+    """
+    if target.hd.available < target.quantity:
+        raise ValidationError("Não existem recursos diponíveis. Tente diminuir "
+                              "a quantidade ou adicionar novos recursos.")
+    elif target.server.hd_slot_available < target.quantity:
+        raise ValidationError("Não existem slots no servidor diponíveis."
+                              "Tente diminuir a quantidade.")
+    else:
+        added_capacity = target.hd.capacity * target.quantity
+        if target.hd.is_ssd is True:
+            server_values = {'ssd_available': target.server.ssd_available + added_capacity,
+                             'ssd_total': target.server.ssd_available + added_capacity}
+        else:
+            server_values = {'hd_available': target.server.hd_available + added_capacity,
+                             'hd_total': target.server.hd_available + added_capacity}
+        connection.execute(Server.__table__.update()
+                           .where(Server.__table__.c.id == target.server_id)
+                           .values(**server_values,
+                                   hd_slot_available=target.server.hd_slot_available - target.quantity))
+        connection.execute(Hd.__table__.update()
+                           .where(Hd.__table__.c.model == target.hd_model)
+                           .values(available=target.hd.available - target.quantity))
+
+
+@event.listens_for(ServerHd, 'before_delete')
+def server_hd_before_delete(maper, connection, target):
+    """
+        Before the delete, updates the server.hd_total, server.hd_available, server.ssd_total,
+        server.ssd_available, hd.available and server.hd_slot_available based on the quantity.
+    """
+    if target.quantity * target.hd.capacity > target.server.hd_available:
+        raise ValidationError('Erro! O HD a ser deletado ainda está em uso!')
+    else:
+        removed_capacity = target.quantity * target.hd.capacity
+        if target.hd.is_ssd is True:
+            server_values = {'ssd_available': target.server.ssd_available - removed_capacity,
+                             'ssd_total': target.server.ssd_available - removed_capacity}
+        else:
+            server_values = {'hd_available': target.server.hd_available - removed_capacity,
+                             'hd_total': target.server.hd_available - removed_capacity}
+
+        connection.execute(Server.__table__.update()
+                           .where(Server.__table__.c.id == target.server_id)
+                           .values(**server_values,
+                                   hd_slot_available=target.server.hd_slot_available + target.quantity))
+        connection.execute(Hd.__table__.update()
+                           .where(Hd.__table__.c.model == target.hd_model)
+                           .values(available=target.hd.available + target.quantity))

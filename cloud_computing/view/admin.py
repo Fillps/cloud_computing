@@ -21,42 +21,6 @@ class AdminView(sqla.ModelView):
         """
         return current_user.has_role('admin')
 
-    def update_model(self, form, model):
-        """
-            Overrides the function update_model, showing the ValueErrors exceptions from database.
-            This exceptions are shown as ValidationErrors.
-
-            Update model from form.
-
-            :param form:
-                Form instance
-            :param model:
-                Model instance
-        """
-        try:
-            form.populate_obj(model)
-            self._on_model_change(form, model, False)
-            self.session.commit()
-        except ValueError as ve:
-            self.handle_view_exception(ValidationError(ve.args))
-            self.session.rollback()
-            return False
-        except Exception as ex:
-            if not self.handle_view_exception(ex):
-                from flask import flash
-                from flask_admin.babel import gettext
-                flash(gettext('Failed to update record. %(error)s', error=str(ex)), 'error')
-                from flask_admin.contrib.rediscli import log
-                log.exception('Failed to update record.')
-
-            self.session.rollback()
-
-            return False
-        else:
-            self.after_model_change(form, model, False)
-
-        return True
-
 
 class UserAdmin(AdminView):
     # Don't display the password on the list of Users
@@ -255,54 +219,26 @@ class HdAdmin(ComponentAdmin):
 
 
 class ServerAdmin(AdminView):
-    column_list = ['id', 'cpu', 'cores_available', 'n_slot_gpu', 'server_gpus', 'n_slot_ram', 'ram_max', 'ram_total',
-                   'ram_available', 'n_slot_hd', 'hd_total', 'hd_available', 'ssd_total', 'ssd_available', 'os']
-    form_columns = ['cpu', 'n_slot_gpu', 'n_slot_ram', 'ram_max', 'n_slot_hd', 'os']
+    column_list = ['id', 'cpu', 'cores_available', 'gpu_slot_available', 'server_gpus', 'ram_slot_available', 'ram_max', 'ram_total',
+                   'ram_available', 'hd_slot_available', 'hd_total', 'hd_available', 'ssd_total', 'ssd_available', 'os']
+    form_columns = ['cpu', 'gpu_slot_total', 'ram_slot_total', 'ram_max', 'hd_slot_total', 'os']
 
 
 class ServerGpu(AdminView):
-    form_create_rules = ['server', 'gpu']
-    form_edit_rules = ['quantity']
+    form_columns = ['server', 'gpu', 'quantity']
+
     form_args = dict(
         quantity=dict(validators=[ComponentAdmin.bigger_than_zero])
     )
 
-    def on_model_delete(self, model):
-        if model.available_capacity != model.total_capacity:
-            raise ValidationError('Erro! O GPU a ser deletado ainda está em uso!')
-        else:
-            model.gpu.available += model.quantity
-
 
 class ServerRam(AdminView):
-    form_edit_rules = ['quantity']
-    form_create_rules = ['server', 'ram']
-
-    def on_model_delete(self, model):
-        if model.quantity * model.ram.capacity > model.server.ram_available:
-            raise ValidationError('Erro! A RAM a ser deletado ainda está em uso!')
-        else:
-            model.server.ram_available -= model.quantity * model.ram.capacity
-            model.server.ram_total -= model.quantity * model.ram.capacity
-            model.ram.available += model.quantity
+    form_args = dict(
+        quantity=dict(validators=[ComponentAdmin.bigger_than_zero])
+    )
 
 
 class ServerHd(AdminView):
-    form_edit_rules = ['quantity']
-    form_create_rules = ['server', 'hd']
-
-    def on_model_delete(self, model):
-        if model.hd.is_ssd:
-            if model.quantity * model.hd.capacity > model.server.ssd_available:
-                raise ValidationError('Erro! O SSD a ser deletado ainda está em uso!')
-            else:
-                model.server.ssd_available -= model.quantity * model.hd.capacity
-                model.server.ssd_total -= model.quantity * model.hd.capacity
-                model.hd.available += model.quantity
-        else:
-            if model.quantity * model.hd.capacity > model.server.hd_available:
-                raise ValidationError('Erro! O HD a ser deletado ainda está em uso!')
-            else:
-                model.server.hd_available -= model.quantity * model.hd.capacity
-                model.server.hd_total -= model.quantity * model.hd.capacity
-                model.hd.available += model.quantity
+    form_args = dict(
+        quantity=dict(validators=[ComponentAdmin.bigger_than_zero])
+    )
