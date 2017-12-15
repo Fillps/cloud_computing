@@ -19,6 +19,8 @@ USER_RESOURCES_REQUEST_MESSAGE_LENGTH = 50
 
 
 class UserModelView(sqla.ModelView):
+    list_template = 'list.html'
+    create_template = 'create.html'
     def is_accessible(self):
         """Prevent administration of ResourceRequests unless the currently
         logged-in user has the "end-user" role.
