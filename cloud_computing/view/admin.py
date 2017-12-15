@@ -26,6 +26,7 @@ class UserAdmin(AdminView):
     # Don't display the password on the list of Users
     column_list = ['id', 'name', 'last_name', 'email', 'cpf', 'cnpj',
                    'company', 'active', 'confirmed_at', 'roles']
+<<<<<<< HEAD
     column_labels = dict(
         id='Id',
         name='Nome',
@@ -37,6 +38,11 @@ class UserAdmin(AdminView):
         active='Ativo',
         confirmed_at='Cadastrado em',
         roles='Papéis')
+=======
+    column_labels = dict(id='Id', name='Nome', last_name='Sobrenome', 
+                     email='E-mail', cpf='CPF', cnpj='CNPJ', company='Empresa', 
+                     active='Ativo', confirmed_at='Cadastrado em', roles='Papéis')
+>>>>>>> menus das tabelas traduzidos
 
     # Don't include the standard password field when creating or editing a
     # User (but see below)
@@ -83,6 +89,7 @@ class UserAdmin(AdminView):
 class RoleAdmin(AdminView):
     column_searchable_list = ['name', 'description']
     column_labels = dict(name='Nome', description='Descrição')
+    list_template = 'list.html'
 
 
 class PlanAdmin(AdminView):
@@ -91,6 +98,7 @@ class PlanAdmin(AdminView):
     column_searchable_list = ['title', 'price', 'period', 'description',
                               'is_public']
     form_columns = column_list
+<<<<<<< HEAD
     column_labels = dict(
         title='Título',
         price='Preço',
@@ -102,6 +110,8 @@ class PlanAdmin(AdminView):
         rams='RAMs',
         hds='HDs',
         os='OS')
+=======
+>>>>>>> menus das tabelas traduzidos
 
 
 class ResourceRequestsAdmin(AdminView):
@@ -110,6 +120,7 @@ class ResourceRequestsAdmin(AdminView):
     column_searchable_list = ['id', 'message', 'message_date']
     column_labels = dict(id='Id', user_rel='Usuário', message='Mensagem', 
                          message_date='Data da Mensagem')
+    list_template = 'list.html'
 
     # Admins cannot delete or create requests, only answer them
     can_delete = False
@@ -201,6 +212,7 @@ class CpuAdmin(ComponentAdmin):
     column_searchable_list = column_list
     column_labels = dict(model='Modelo', cores='Nº de Núcleos', frequency='Frequência', 
                          price='Preço', total='Total', available='Disponíveis')
+    list_template = 'list.html'
 
     form_args = dict(
         cores=dict(validators=[ComponentAdmin.bigger_than_zero]),
@@ -213,6 +225,7 @@ class GpuAdmin(ComponentAdmin):
     column_list = ['model', 'ram', 'frequency', 'price', 'total', 'available']
     form_columns = ['model', 'ram', 'frequency', 'price', 'available']
     column_searchable_list = column_list
+<<<<<<< HEAD
     column_labels = dict(
         model='Modelo',
         ram='RAM',
@@ -220,6 +233,8 @@ class GpuAdmin(ComponentAdmin):
         price='Preço',
         total='Total',
         available='Disponíveis')
+=======
+>>>>>>> menus das tabelas traduzidos
 
     form_args = dict(
         ram=dict(validators=[ComponentAdmin.bigger_than_zero]),
@@ -232,12 +247,15 @@ class RamAdmin(ComponentAdmin):
     column_list = ['model', 'capacity', 'price', 'total', 'available']
     form_columns = ['model', 'capacity', 'price', 'available']
     column_searchable_list = column_list
+<<<<<<< HEAD
     column_labels = dict(
         model='Modelo',
         capacity='Capacidade',
         price='Preço',
         total='Total',
         available='Disponíveis')
+=======
+>>>>>>> menus das tabelas traduzidos
 
     form_args = dict(
         capacity=dict(validators=[ComponentAdmin.bigger_than_zero]),
@@ -251,6 +269,7 @@ class HdAdmin(ComponentAdmin):
     column_searchable_list = column_list
     column_labels = dict(model='Modelo', capacity='Capacidade', is_ssd='SSD', price='Preço', 
                          total='Total', available='Disponíveis')
+    list_template = 'list.html'
 
     form_args = dict(
         capacity=dict(validators=[ComponentAdmin.bigger_than_zero]),
