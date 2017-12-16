@@ -85,7 +85,7 @@ class ResourceRequestsUser(UserModelView):
     column_details_list = ['id', 'message_date', 'message', 'admin_rel', 'answer_date', 'answer']
     form_excluded_columns = ['message_date', 'answer_date', 'answer', 'id', 'admin_rel', 'user_rel']
     column_labels = dict(id='id', message_date='Data da Mensagem', admin_rel='Administrador', 
-                         answer_date='Data da Resposta', answer='Resposta')
+                         answer_date='Data da Resposta', answer='Resposta', message='Mensagem')
     list_template = 'list.html'
 
     # CKeditor - Text editor for the answer
@@ -153,7 +153,7 @@ class ResourceRequestsUser(UserModelView):
         request_model = self.get_one(request_id)
 
         if request_model is None:
-            flash(gettext('Record does not exist.'), 'error')
+            flash(gettext('O registro não existe.'), 'erro')
             return redirect(return_url)
 
         if self.details_modal and request.args.get('modal'):
@@ -183,4 +183,4 @@ class ResourceRequestsUser(UserModelView):
             model.user_id = current_user.id
             model.message_date = func.now()
         else:
-            raise validators.ValidationError('Answer cannot be empty!')
+            raise validators.ValidationError('A resposta não pode estar vazia!')

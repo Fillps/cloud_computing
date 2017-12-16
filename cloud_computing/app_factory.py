@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 
 from flask import Flask
+from flask import app
 from flask_admin import Admin
 from flask_heroku import Heroku
 from flask_security import Security
 from flask_security import user_registered
+from flask_babelex import Babel
 
 from cloud_computing.model.database import db, user_datastore
 from cloud_computing.model import models
@@ -20,6 +22,9 @@ class AppFactory:
 
         Heroku(self.app)
         self.app.config.from_pyfile(config_filename)
+        
+        # Cria o tradutor
+        babel = Babel(self.app)
 
         self.__config_database_and_security()
         self.__config_flask_admin()
@@ -32,6 +37,11 @@ class AppFactory:
             role = user_datastore.find_or_create_role('end-user')
             user_datastore.add_role_to_user(user, role)
             db.session.commit()
+        
+        # Função que define a língua
+        @babel.localeselector
+        def get_locale():
+            return 'pt_BR'
 
     def get_app(self):
         return self.app

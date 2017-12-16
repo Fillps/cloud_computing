@@ -97,7 +97,7 @@ class ResourceRequestsAdmin(AdminView):
     form_columns = ['message', 'answer']
     column_searchable_list = ['id', 'message', 'message_date']
     column_labels = dict(id='Id', user_rel='Usuário', message='Mensagem', 
-                         message_date='Data da Mensagem')
+                         message_date='Data da Mensagem', answer='Resposta')
 
     # Admins cannot delete or create requests, only answer them
     can_delete = False
@@ -145,7 +145,7 @@ class ResourceRequestsAdmin(AdminView):
             model.admin_id = current_user.id
             model.answer_date = func.now()
         else:
-            raise validators.ValidationError('Answer cannot be empty!')
+            raise validators.ValidationError('A resposta não pode estar vazia!')
 
 
 class ComponentAdmin(AdminView):

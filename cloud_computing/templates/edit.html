@@ -16,9 +16,11 @@
         <li>
             <a href="{{ return_url }}">{{ _gettext('Lista') }}</a>
         </li>
+        {% if can_create %}
         <li class="nav nav-tabs">
             <a href="{{ get_url('.create_view', url=return_url) }}" title="{{ _gettext('Inserir Novo Registro') }}">{{ _gettext('Inserir') }}</a>
         </li>
+        {% endif %}
         <li class="active">
             <a href="javascript:void(0)">{{ _gettext('Editar') }}</a>
         </li>
