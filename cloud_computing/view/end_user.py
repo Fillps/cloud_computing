@@ -19,9 +19,6 @@ USER_RESOURCES_REQUEST_MESSAGE_LENGTH = 50
 
 
 class UserModelView(sqla.ModelView):
-    list_template = 'list.html'
-    create_template = 'create.html'
-    edit_template = 'edit.html'
 
     def is_accessible(self):
         """Prevent administration of ResourceRequests unless the currently
@@ -36,7 +33,6 @@ class PurchaseUser(UserModelView):
     can_create = False
     column_list = ['id', 'plans', 'credit_cards']
     column_labels = dict(id='Id', plans='Planos', credit_cards='Cartões de Crédito')
-    list_template = 'list.html'
 
     def get_count_query(self):
         """Count of the requests with the user_id equal to the current user."""
@@ -51,7 +47,6 @@ class CreditCardUser(UserModelView):
     column_list = ['number', 'name', 'exp_date']
     form_columns = ['number', 'name', 'exp_date', 'cvv']
     column_labels = dict(number='Número', name='Nome', exp_date='Data de Vencimento', cvv='CVV')
-    list_template = 'list.html'
 
     def _number_formatter(view, context, model, name):
         """Format the card number to show only the last 4 digits."""
