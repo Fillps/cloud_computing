@@ -18,6 +18,8 @@ class AdminView(sqla.ModelView):
     #Templates traduzidos
     list_template = 'list.html'
     create_template = 'create.html'
+    edit_template = 'edit.html'
+
     def is_accessible(self):
         """Prevent administration of Users unless the currently
         logged-in user has the "admin" role.
@@ -60,7 +62,7 @@ class UserAdmin(AdminView):
 
         # Add a password field, naming it "password2" and
         # labeling it "New Password"
-        form_class.password2 = PasswordField('New Password')
+        form_class.password2 = PasswordField('Nova Senha')
 
         return form_class
 
