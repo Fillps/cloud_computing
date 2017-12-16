@@ -5,13 +5,15 @@ from flask_admin.contrib.sqla import validators
 from flask_security import current_user, utils
 from markupsafe import Markup
 from sqlalchemy import func
-from wtforms import ValidationError
+from wtforms import ValidationError, SelectField
 from wtforms.fields import PasswordField, IntegerField
 
 from cloud_computing.model.models import ResourceRequests
 from cloud_computing.utils.util import ReadonlyCKTextAreaField, CKTextAreaField, ReadOnlyIntegerField
 
 ADMIN_RESOURCES_REQUEST_MESSAGE_LENGTH = 100
+REMOVE_ID = '2'
+ADD_ID = '1'
 
 
 class AdminView(sqla.ModelView):
@@ -147,29 +149,33 @@ class ComponentAdmin(AdminView):
             raise ValidationError("Esse campo precisa ser maior que zero.")
 
     form_args = dict(
-        price=dict(validators=[bigger_than_zero])
+        price=dict(validators=[bigger_than_zero]),
+        quantity=dict(validators=[bigger_than_zero])
     )
 
     def scaffold_form(self):
         """Overrides the scaffold_form function. Adds the quantity field to the form."""
         form_class = super(ComponentAdmin, self).scaffold_form()
 
-        form_class.quantity = IntegerField('Adicionar Quantidade', default=0)
+        form_class.addOrRemove = SelectField("Selecione", choices=[(ADD_ID, 'Adicionar'), (REMOVE_ID, 'Remover')])
+        form_class.quantity = IntegerField('Quantidade', default=0)
 
         return form_class
 
     def on_model_change(self, form, model, is_created):
         """Check if the available quantity and price are > 0."""
+        if form.addOrRemove.data == REMOVE_ID:
+            model.quantity = - model.quantity
         if is_created:
             if model.quantity >= 0:
                 model.total = model.quantity
             else:
-                raise ValidationError("Quantidade total precisa ser maior que a disponível.")
+                raise ValidationError("Quantidade total precisa ser maior que zero.")
         else:
             if model.available + model.quantity >= 0:
                 model.total = model.total + model.quantity
             else:
-                raise ValidationError("Quantidade total precisa ser maior que a disponível.")
+                raise ValidationError("Quantidade total precisa ser maior que zero.")
 
 
 class CpuAdmin(ComponentAdmin):
@@ -216,3 +222,52 @@ class HdAdmin(ComponentAdmin):
         capacity=dict(validators=[ComponentAdmin.bigger_than_zero]),
         price=dict(validators=[ComponentAdmin.bigger_than_zero])
     )
+
+
+# TODO All the editing of a server should be in one screen
+class ServerAdmin(AdminView):
+    column_list = ['id', 'cpu', 'cores_available', 'gpu_slot_available', 'server_gpus', 'ram_slot_available', 'ram_max', 'ram_total',
+                   'ram_available', 'hd_slot_available', 'hd_total', 'hd_available', 'ssd_total', 'ssd_available', 'os']
+    form_columns = ['cpu', 'gpu_slot_total', 'ram_slot_total', 'ram_max', 'hd_slot_total', 'os']
+
+
+class ServerComponentAdmin(AdminView):
+    form_edit_rules = ['quantity', 'addOrRemove', 'add_quantity']
+    form_overrides = {
+        'quantity': ReadOnlyIntegerField
+    }
+
+    def bigger_than_zero(form, field):
+        if field.data <= 0:
+            raise ValidationError("Esse campo precisa ser maior que zero.")
+
+    form_args = dict(
+        add_quantity=dict(validators=[bigger_than_zero])
+    )
+
+    def scaffold_form(self):
+        """Overrides the scaffold_form function. Adds the add_quantity field to the form."""
+        form_class = super(ServerComponentAdmin, self).scaffold_form()
+
+        form_class.addOrRemove = SelectField("Selecione", choices=[(ADD_ID, 'Adicionar'), (REMOVE_ID, 'Remover')])
+        form_class.add_quantity = IntegerField('Quantidade')
+
+        return form_class
+
+    def on_model_change(self, form, model, is_created):
+        """Adds the add_quantity field to the model quantity."""
+        if form.addOrRemove.data == REMOVE_ID:
+            model.add_quantity = - model.add_quantity
+        model.quantity += model.add_quantity
+
+
+class ServerGpuAdmin(ServerComponentAdmin):
+    form_columns = ['server', 'gpu', 'quantity']
+
+
+class ServerRamAdmin(ServerComponentAdmin):
+    can_create = True
+
+
+class ServerHdAdmin(ServerComponentAdmin):
+    can_create = True

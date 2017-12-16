@@ -3,8 +3,27 @@
 import datetime
 from flask_security import utils
 
-from cloud_computing.model.database import user_datastore, get_or_create, get
-from cloud_computing.model.models import *
+
+# TODO @Filipe Eu não entendi como essas duas funções se complementam,
+# o que é essa instância e quando tu tem que criar?
+# Acho que ficaria mais claro se a cada interação com o banco tu
+# primeiro criasse a instância e depois operasse em cima dela, o que tu acha?
+
+def get_or_create(session, _model, **kwargs):
+    """Returns a database instance. If there is none creates one."""
+    instance = get(session, _model, **kwargs)
+
+    if instance is None:
+        instance = _model(**kwargs)
+        session.add(instance)
+
+    return instance
+
+
+def get(session, _model, **kwargs):
+    """Queries the database instance in the session."""
+    return session.query(_model).filter_by(**kwargs).first()
+
 
 END_USER_ID = 1500
 ADMIN_ID = 1501
@@ -12,6 +31,10 @@ ADMIN_ID = 1501
 
 def setup_development_data(app):
     """Creates test data before the app runs, should not go to production."""
+
+    from cloud_computing.model.database import db
+    from cloud_computing.model.models import Os, Cpu, Gpu, Ram, Hd, ResourceRequests, CreditCard, Server, Plan
+    from cloud_computing.model.database import user_datastore
 
     # Create any database tables that don't exist yet
     with app.app_context():
@@ -161,5 +184,14 @@ def setup_development_data(app):
                       hero_image="https://i.imgur.com/jXdehmz.jpg",
                       thumbnail="https://i.imgur.com/YJChIXK.jpg")
 
+        if get(db.session, Server, id=1500) is None:
+            get_or_create(db.session, Server,
+                          id=1500,
+                          cpu_model='CPU 4 Cores 2.0',
+                          ram_slot_total=10,
+                          ram_max=160,
+                          gpu_slot_total=10,
+                          hd_slot_total=100,
+                          os_name='Linux')
         # Commit changes
         db.session.commit()
