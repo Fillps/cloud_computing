@@ -12,6 +12,8 @@ from cloud_computing.model.models import ResourceRequests
 from cloud_computing.utils.util import ReadonlyCKTextAreaField, CKTextAreaField, ReadOnlyIntegerField
 
 ADMIN_RESOURCES_REQUEST_MESSAGE_LENGTH = 100
+REMOVE_ID = '2'
+ADD_ID = '1'
 
 
 class AdminView(sqla.ModelView):
@@ -137,10 +139,6 @@ class ResourceRequestsAdmin(AdminView):
             raise validators.ValidationError('Answer cannot be empty!')
 
 
-REMOVE_ID = '2'
-ADD_ID = '1'
-
-
 class ComponentAdmin(AdminView):
     form_overrides = {
         'available': ReadOnlyIntegerField
@@ -159,7 +157,7 @@ class ComponentAdmin(AdminView):
         """Overrides the scaffold_form function. Adds the quantity field to the form."""
         form_class = super(ComponentAdmin, self).scaffold_form()
 
-        form_class.addOrRemove = SelectField("Selecione", choices=[('1', 'Adicionar'), ('2', 'Remover')])
+        form_class.addOrRemove = SelectField("Selecione", choices=[(ADD_ID, 'Adicionar'), (REMOVE_ID, 'Remover')])
         form_class.quantity = IntegerField('Quantidade', default=0)
 
         return form_class
@@ -226,6 +224,7 @@ class HdAdmin(ComponentAdmin):
     )
 
 
+# TODO All the editing of a server should be in one screen
 class ServerAdmin(AdminView):
     column_list = ['id', 'cpu', 'cores_available', 'gpu_slot_available', 'server_gpus', 'ram_slot_available', 'ram_max', 'ram_total',
                    'ram_available', 'hd_slot_available', 'hd_total', 'hd_available', 'ssd_total', 'ssd_available', 'os']
@@ -250,7 +249,7 @@ class ServerComponentAdmin(AdminView):
         """Overrides the scaffold_form function. Adds the add_quantity field to the form."""
         form_class = super(ServerComponentAdmin, self).scaffold_form()
 
-        form_class.addOrRemove = SelectField("Selecione", choices=[('1', 'Adicionar'), ('2', 'Remover')])
+        form_class.addOrRemove = SelectField("Selecione", choices=[(ADD_ID, 'Adicionar'), (REMOVE_ID, 'Remover')])
         form_class.add_quantity = IntegerField('Quantidade')
 
         return form_class

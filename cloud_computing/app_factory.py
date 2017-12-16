@@ -17,7 +17,6 @@ from cloud_computing.view.view import default_blueprint
 
 class AppFactory:
     """Builds the app."""
-
     def __init__(self, config_filename='../configs/production.py'):
         self.app = Flask(__name__)
 
