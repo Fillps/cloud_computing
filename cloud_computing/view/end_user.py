@@ -84,17 +84,12 @@ class ResourceRequestsUser(UserModelView):
     column_searchable_list = ['id', 'message_date', 'message', 'answer_date', 'answer']
     column_details_list = ['id', 'message_date', 'message', 'admin_rel', 'answer_date', 'answer']
     form_excluded_columns = ['message_date', 'answer_date', 'answer', 'id', 'admin_rel', 'user_rel']
-<<<<<<< HEAD
     column_labels = dict(
         id='id',
         message_date='Data da Mensagem',
         admin_rel='Administrador',
         answer_date='Data da Resposta',
         answer='Resposta')
-=======
-    column_labels = dict(id='id', message_date='Data da Mensagem', admin_rel='Administrador', 
-                         answer_date='Data da Resposta', answer='Resposta')
->>>>>>> menus das tabelas traduzidos
 
     # CKeditor - Text editor for the answer
     extra_js = ['//cdn.ckeditor.com/4.6.0/standard/ckeditor.js']
@@ -161,7 +156,7 @@ class ResourceRequestsUser(UserModelView):
         request_model = self.get_one(request_id)
 
         if request_model is None:
-            flash(gettext('Record does not exist.'), 'error')
+            flash(gettext('O registro não existe.'), 'erro')
             return redirect(return_url)
 
         if self.details_modal and request.args.get('modal'):
@@ -191,4 +186,4 @@ class ResourceRequestsUser(UserModelView):
             model.user_id = current_user.id
             model.message_date = func.now()
         else:
-            raise validators.ValidationError('A resposta não pode ser vazia!')
+            raise validators.ValidationError('A resposta não pode estar em branco!')
