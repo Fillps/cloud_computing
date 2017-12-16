@@ -63,7 +63,7 @@ class Plan(db.Model):
     cpu_model = db.Column(db.Text, db.ForeignKey('cpu.model'), nullable=False)
     os_name = db.Column(db.Text, db.ForeignKey('os.name'), nullable=False)
     shop_description = db.Column(db.Text)
-    slug_url = db.Column(db.Text)
+    slug_url = db.Column(db.Text, unique=True)
     thumbnail = db.Column(db.Text, default='http://placehold.it/700x400')
     hero_image = db.Column(db.Text, default='http://placehold.it/900x400')
 
@@ -73,11 +73,11 @@ class Plan(db.Model):
     ram = db.relationship('Ram', secondary='plan_ram')
     hd = db.relationship('Hd', secondary='plan_hd')
 
-    def __init__(self, *args, **kwargs):
+    @validates('title')
+    def update_slug(self, key, value):
         """Creates the slug url, used on the item detail page."""
-        if 'slug_url' not in kwargs:
-            kwargs['slug_url'] = slugify(kwargs.get('title', ''))
-        super().__init__(*args, **kwargs)
+        self.slug_url = slugify(value)
+        return value
 
 
 class ResourceRequests(db.Model):
