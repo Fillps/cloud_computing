@@ -247,7 +247,7 @@ class ServerComponentAdmin(AdminView):
         return form_class
 
     def on_model_change(self, form, model, is_created):
-        """Check if the available quantity and price are > 0."""
+        """Adds the add_quantity field to the model quantity."""
         model.quantity += form.add_quantity.data
 
 
