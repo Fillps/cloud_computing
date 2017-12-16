@@ -255,13 +255,18 @@ class Server(db.Model):
             new_cpu.available -= 1
             return value
 
-
-@event.listens_for(Server, 'before_insert')
-def server_before_insert(maper, connection, target):
-    """Initialize the available slots equal to total_slots."""
-    target.ram_slot_available = target.ram_slot_total
-    target.gpu_slot_available = target.gpu_slot_total
-    target.hd_slot_available = target.hd_slot_total
+    @validates('ram_slot_total', 'gpu_slot_total', 'hd_slot_total')
+    def update_ram_slot_total(self, key, value):
+        available = key[:-5] + 'available'
+        available_value = self.__getattribute__(available)
+        old_value = self.__getattribute__(key)
+        if available_value is None:
+            self.__setattr__(available, value)
+        elif available_value + value - old_value < 0:
+            raise ValidationError("Falha ao remover os slots. Tente remover os componentes antes.")
+        else:
+            self.__setattr__(available, available_value + value - old_value)
+        return value
 
 
 class ServerResource:
@@ -295,7 +300,7 @@ class ServerGpu(db.Model, ServerResource):
             When quantity is updated, updates the total_capacity, available_capacity, gpu.available
             and server.gpu_slot_available.
         """
-        if value < 1:
+        if value < 0:
             raise ValidationError('A quantidade precisa ser maior que zero.')
         elif self.server_id is None:
             return value
@@ -372,7 +377,7 @@ class ServerRam(db.Model, ServerResource):
             When quantity is updated, updates the server.ram_total, server.ram_available, ram.available
             and server.ram_slot_available.
         """
-        if value < 1:
+        if value < 0:
             raise ValidationError('A quantidade precisa ser maior que zero.')
         elif self.server_id is None:
             return value
@@ -389,6 +394,8 @@ class ServerRam(db.Model, ServerResource):
             raise ValidationError("O uso do recurso está maior do que o disponível. "
                                   "Tente diminuir a utilização dos recursos ou aumente "
                                   "a quantiadde de recursos a serem adicionados.")
+        elif self.server.ram_max < self.server.ram_total + net_capacity:
+            raise ValidationError("RAM máxima do servidor atingida.")
         else:
             self.server.ram_total += net_capacity
             self.server.ram_available += net_capacity
@@ -409,6 +416,8 @@ def server_ram_before_insert(maper, connection, target):
     elif target.server.ram_slot_available < target.quantity:
         raise ValidationError("Não existem slots no servidor diponíveis."
                               "Tente diminuir a quantidade.")
+    elif target.server.ram_max < target.server.ram_total + target.ram.capacity * target.quantity:
+        raise ValidationError("RAM máxima do servidor atingida.")
     else:
         added_capacity = target.ram.capacity * target.quantity
         connection.execute(Server.__table__.update()
@@ -453,7 +462,7 @@ class ServerHd(db.Model, ServerResource):
             When quantity is updated, updates the server.hd_total, server.hd_available,
             server.ssd_total, server.ssd_available, hd.available and server.hd_slot_available.
         """
-        if value < 1:
+        if value < 0:
             raise ValidationError('A quantidade precisa ser maior que zero.')
         elif self.server_id is None:
             return value
@@ -479,7 +488,7 @@ class ServerHd(db.Model, ServerResource):
                 self.server.hd_total += net_capacity
                 self.server.hd_available += net_capacity
             self.hd.available -= value - self.quantity
-            self.server.hd_slot -= value - self.quantity
+            self.server.hd_slot_available -= value - self.quantity
             return value
 
 

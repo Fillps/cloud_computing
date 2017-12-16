@@ -224,21 +224,44 @@ class ServerAdmin(AdminView):
     form_columns = ['cpu', 'gpu_slot_total', 'ram_slot_total', 'ram_max', 'hd_slot_total', 'os']
 
 
-class ServerGpu(AdminView):
+class ServerComponentAdmin(AdminView):
+    form_edit_rules = ['quantity', 'add_quantity']
+    form_overrides = {
+        'quantity': ReadOnlyIntegerField
+    }
+
+    def bigger_than_zero(form, field):
+        if field.data <= 0:
+            raise ValidationError("Esse campo precisa ser maior que zero.")
+
+    form_args = dict(
+        add_quantity=dict(validators=[bigger_than_zero])
+    )
+
+    def scaffold_form(self):
+        """Overrides the scaffold_form function. Adds the add_quantity field to the form."""
+        form_class = super(ServerComponentAdmin, self).scaffold_form()
+
+        form_class.add_quantity = IntegerField('Adicionar Quantidade', default=0)
+
+        return form_class
+
+    def on_model_change(self, form, model, is_created):
+        """Check if the available quantity and price are > 0."""
+        model.quantity += form.add_quantity.data
+
+
+class ServerGpuAdmin(ServerComponentAdmin):
     form_columns = ['server', 'gpu', 'quantity']
 
-    form_args = dict(
-        quantity=dict(validators=[ComponentAdmin.bigger_than_zero])
-    )
+
+class ServerRamAdmin(ServerComponentAdmin):
+    can_create = True
 
 
-class ServerRam(AdminView):
-    form_args = dict(
-        quantity=dict(validators=[ComponentAdmin.bigger_than_zero])
-    )
+class ServerHdAdmin(ServerComponentAdmin):
+    can_create = True
 
 
-class ServerHd(AdminView):
-    form_args = dict(
-        quantity=dict(validators=[ComponentAdmin.bigger_than_zero])
-    )
+
+
