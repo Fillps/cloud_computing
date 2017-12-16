@@ -13,6 +13,7 @@ flask-admin = "*"
 flask-heroku = "*"
 psycopg2 = "*"
 gunicorn = "*"
+python-slugify = "*"
 
 
 [requires]

@@ -4,6 +4,7 @@
         <div class="space-up">
             <form class="form" action="{{ url_for_security('register') }}" role="form" method="POST" name="register_user_form">
                 {{ register_user_form.hidden_tag() }}
+
                 <div class="row">
                     <div class="col-md-3"></div>
                     <div class="col-md-6">
@@ -11,12 +12,20 @@
                         <hr>
                     </div>
                 </div>
+
+                <div class="row">
+                    <div class="col-md-3"></div>
+                    <div class="col-md-6">
+                        <h3>Dados pessoais</h3>
+                    </div>
+                </div>
+
                 <div class="row">
                     <div class="col-md-3"></div>
                     <div class="col-md-6">
                         <div class="form-group has-danger">
                             <label for="user">Nome</label>
-                            <div class="input-group mb-2 mr-sm-2 mb-sm-0" id="user">
+                            <div class="input-group mb-2 mr-sm-2 mb-sm-0" id="name">
                                 <div class="input-group-addon" style="width: 2.6rem"><i class="fa fa-user"></i></div>
                                 {{ register_user_form.name(class='form-control', placeholder='nome', required='true', autofocus='true') }}
                             </div>
@@ -26,9 +35,21 @@
                 <div class="row">
                     <div class="col-md-3"></div>
                     <div class="col-md-6">
+                        <div class="form-control-feedback">
+                            <span class="text-danger align-middle">
+                                {% for error in register_user_form.name.errors %}
+                                    <p class="fa fa-close"><strong>Error:</strong> {{ error }} </p>
+                                {% endfor %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-3"></div>
+                    <div class="col-md-6">
                         <div class="form-group has-danger">
                             <label for="user">Sobrenome</label>
-                            <div class="input-group mb-2 mr-sm-2 mb-sm-0" id="user">
+                            <div class="input-group mb-2 mr-sm-2 mb-sm-0" id="last_name">
                                 <div class="input-group-addon" style="width: 2.6rem"><i class="fa fa-user"></i></div>
                                 {{ register_user_form.last_name(class='form-control', placeholder='sobrenome', required='true', autofocus='true') }}
                             </div>
@@ -38,12 +59,12 @@
                 <div class="row">
                     <div class="col-md-3"></div>
                     <div class="col-md-6">
-                        <div class="form-group has-danger">
-                            <label for="user">Email</label>
-                            <div class="input-group mb-2 mr-sm-2 mb-sm-0" id="user">
-                                <div class="input-group-addon" style="width: 2.6rem"><i class="fa fa-user"></i></div>
-                                {{ register_user_form.email(class='form-control', placeholder='email', required='true', autofocus='true') }}
-                            </div>
+                        <div class="form-control-feedback">
+                            <span class="text-danger align-middle">
+                                {% for error in register_user_form.last_name.errors %}
+                                    <p class="fa fa-close"><strong>Error:</strong> {{ error }} </p>
+                                {% endfor %}
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -52,8 +73,8 @@
                     <div class="col-md-6">
                         <div class="form-group has-danger">
                             <label for="user">CPF</label>
-                            <div class="input-group mb-2 mr-sm-2 mb-sm-0" id="user">
-                                <div class="input-group-addon" style="width: 2.6rem"><i class="fa fa-user"></i></div>
+                            <div class="input-group mb-2 mr-sm-2 mb-sm-0" id="cpf">
+                                <div class="input-group-addon" style="width: 2.6rem"><i class="fa fa-book"></i></div>
                                 {{ register_user_form.cpf(class='form-control', placeholder='cpf', optional='true', autofocus='true') }}
                             </div>
                         </div>
@@ -62,10 +83,22 @@
                 <div class="row">
                     <div class="col-md-3"></div>
                     <div class="col-md-6">
+                        <div class="form-control-feedback">
+                            <span class="text-danger align-middle">
+                                {% for error in register_user_form.cpf.errors %}
+                                    <p class="fa fa-close"><strong>Error:</strong> {{ error }} </p>
+                                {% endfor %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-3"></div>
+                    <div class="col-md-6">
                         <div class="form-group has-danger">
                             <label for="user">CNPJ</label>
-                            <div class="input-group mb-2 mr-sm-2 mb-sm-0" id="user">
-                                <div class="input-group-addon" style="width: 2.6rem"><i class="fa fa-user"></i></div>
+                            <div class="input-group mb-2 mr-sm-2 mb-sm-0" id="cnpj">
+                                <div class="input-group-addon" style="width: 2.6rem"><i class="fa fa-book"></i></div>
                                 {{ register_user_form.cnpj(class='form-control', placeholder='cnpj', optional='true', autofocus='true') }}
                             </div>
                         </div>
@@ -74,12 +107,68 @@
                 <div class="row">
                     <div class="col-md-3"></div>
                     <div class="col-md-6">
+                        <div class="form-control-feedback">
+                            <span class="text-danger align-middle">
+                                {% for error in register_user_form.cnpj.errors %}
+                                    <p class="fa fa-close"><strong>Error:</strong> {{ error }} </p>
+                                {% endfor %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-3"></div>
+                    <div class="col-md-6">
                         <div class="form-group has-danger">
                             <label for="user">Empresa</label>
-                            <div class="input-group mb-2 mr-sm-2 mb-sm-0" id="user">
-                                <div class="input-group-addon" style="width: 2.6rem"><i class="fa fa-user"></i></div>
+                            <div class="input-group mb-2 mr-sm-2 mb-sm-0" id="company">
+                                <div class="input-group-addon" style="width: 2.6rem"><i class="fa fa-building"></i></div>
                                 {{ register_user_form.company(class='form-control', placeholder='empresa', optional='true', autofocus='true') }}
                             </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-3"></div>
+                    <div class="col-md-6">
+                        <div class="form-control-feedback">
+                            <span class="text-danger align-middle">
+                                {% for error in register_user_form.company.errors %}
+                                    <p class="fa fa-close"><strong>Error:</strong> {{ error }} </p>
+                                {% endfor %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-3"></div>
+                    <div class="col-md-6">
+                        <h3>Conta</h3>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-3"></div>
+                    <div class="col-md-6">
+                        <div class="form-group has-danger">
+                            <label for="user">Email</label>
+                            <div class="input-group mb-2 mr-sm-2 mb-sm-0" id="email">
+                                <div class="input-group-addon" style="width: 2.6rem"><i class="fa fa-envelope"></i></div>
+                                {{ register_user_form.email(class='form-control', placeholder='email', required='true', autofocus='true') }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-3"></div>
+                    <div class="col-md-6">
+                        <div class="form-control-feedback">
+                            <span class="text-danger align-middle">
+                                {% for error in register_user_form.email.errors %}
+                                    <p class="fa fa-close"><strong>Error:</strong> {{ error }} </p>
+                                {% endfor %}
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -98,9 +187,21 @@
                 <div class="row">
                     <div class="col-md-3"></div>
                     <div class="col-md-6">
+                        <div class="form-control-feedback">
+                            <span class="text-danger align-middle">
+                                {% for error in register_user_form.password.errors %}
+                                    <p class="fa fa-close"><strong>Error:</strong> {{ error }} </p>
+                                {% endfor %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-3"></div>
+                    <div class="col-md-6">
                         <div class="form-group">
                             <label for="repeat_password">Repita a senha</label>
-                            <div class="input-group mb-2 mr-sm-2 mb-sm-0" id="repeat_password">
+                            <div class="input-group mb-2 mr-sm-2 mb-sm-0" id="password_confirm">
                                 <div class="input-group-addon" style="width: 2.6rem"><i class="fa fa-key"></i></div>
                                 {{ register_user_form.password_confirm(class='form-control', placeholder='senha', required='true') }}
                             </div>
@@ -112,27 +213,6 @@
                     <div class="col-md-6">
                         <div class="form-control-feedback">
                             <span class="text-danger align-middle">
-                                {% for error in register_user_form.name.errors %}
-                                    <p class="fa fa-close"><strong>Error:</strong> {{ error }} </p>
-                                {% endfor %}
-                                {% for error in register_user_form.last_name.errors %}
-                                    <p class="fa fa-close"><strong>Error:</strong> {{ error }} </p>
-                                {% endfor %}
-                                {% for error in register_user_form.cpf.errors %}
-                                    <p class="fa fa-close"><strong>Error:</strong> {{ error }} </p>
-                                {% endfor %}
-                                {% for error in register_user_form.cnpj.errors %}
-                                    <p class="fa fa-close"><strong>Error:</strong> {{ error }} </p>
-                                {% endfor %}
-                                {% for error in register_user_form.company.errors %}
-                                    <p class="fa fa-close"><strong>Error:</strong> {{ error }} </p>
-                                {% endfor %}
-                                {% for error in register_user_form.email.errors %}
-                                    <p class="fa fa-close"><strong>Error:</strong> {{ error }} </p>
-                                {% endfor %}
-                                {% for error in register_user_form.password.errors %}
-                                    <p class="fa fa-close"><strong>Error:</strong> {{ error }} </p>
-                                {% endfor %}
                                 {% for error in register_user_form.password_confirm.errors %}
                                     <p class="fa fa-close"><strong>Error:</strong> {{ error }} </p>
                                 {% endfor %}
@@ -140,12 +220,16 @@
                         </div>
                     </div>
                 </div>
+
                 <div class="row">
                     <div class="col-md-3"></div>
                     <div class="col-md-6">
                         {{ register_user_form.submit(class='btn btn-success') }}
                     </div>
                 </div>
+
+                <div class="space-up"></div>
+
             </form>
         </div>
     </div>

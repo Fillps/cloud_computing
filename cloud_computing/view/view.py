@@ -14,10 +14,8 @@ def show_homescreen():
     return render_template('shop-homepage.html', plans=plans)
 
 
-@default_blueprint.route('/<item_name>')
-def show_item(item_name):
+@default_blueprint.route('/<slug_url>')
+def show_item(slug_url):
     """Shows the item detail page."""
-    plan = Controller.get_plan_by_item_name(item_name)
-
-    # TODO Implement test for error (plan == None)
+    plan = Controller.get_plan_by_slug_url(slug_url)
     return render_template('shop-item.html', plan=plan)

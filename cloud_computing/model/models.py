@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from slugify import slugify
 from flask_security import RoleMixin, UserMixin
 from sqlalchemy import func
 from sqlalchemy.ext.declarative import declared_attr
@@ -56,20 +57,26 @@ class Plan(db.Model):
     id = db.Column(db.Integer(), primary_key=True)
     title = db.Column(db.Text, unique=True)
     price = db.Column(db.Float(), nullable=False)
-    description = db.Column(db.Text)
     period = db.Column(db.Integer, nullable=False)
-    is_public = db.Column(db.Boolean, server_default='false')
     cpu_model = db.Column(db.Text, db.ForeignKey('cpu.model'), nullable=False)
     os_name = db.Column(db.Text, db.ForeignKey('os.name'), nullable=False)
     shop_description = db.Column(db.Text)
+    slug_url = db.Column(db.Text, unique=True)
     thumbnail = db.Column(db.Text, default='http://placehold.it/700x400')
     hero_image = db.Column(db.Text, default='http://placehold.it/900x400')
+    is_public = db.Column(db.Boolean, default='false')
 
     os = db.relationship('Os', backref=db.backref('plans'))
     cpu = db.relationship('Cpu', backref=db.backref('plans'))
     gpu = db.relationship('Gpu', secondary='plan_gpu')
     ram = db.relationship('Ram', secondary='plan_ram')
     hd = db.relationship('Hd', secondary='plan_hd')
+
+    @validates('title')
+    def update_slug(self, key, value):
+        """Creates the slug url, used on the item detail page."""
+        self.slug_url = slugify(value)
+        return value
 
 
 class ResourceRequests(db.Model):
