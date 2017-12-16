@@ -15,10 +15,6 @@ ADMIN_RESOURCES_REQUEST_MESSAGE_LENGTH = 100
 
 
 class AdminView(sqla.ModelView):
-    #Templates traduzidos
-    list_template = 'list.html'
-    create_template = 'create.html'
-    edit_template = 'edit.html'
 
     def is_accessible(self):
         """Prevent administration of Users unless the currently
