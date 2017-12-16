@@ -74,13 +74,13 @@ class RoleAdmin(AdminView):
 
 
 class PlanAdmin(AdminView):
-    column_list = ['title', 'price', 'description', 'period', 'is_public',
-                   'cpu', 'gpu', 'ram', 'hd', 'os']
-    column_searchable_list = ['title', 'price', 'period', 'description',
+    column_list = ['title', 'price', 'period', 'cpu', 'gpu', 'ram',
+                   'hd', 'os', 'is_public']
+    column_searchable_list = ['title', 'price', 'period', 'shop_description',
                               'is_public']
-    form_columns = ['title', 'price', 'description', 'shop_description',
-                    'period', 'is_public', 'cpu', 'gpu', 'ram', 'hd', 'os',
-                    'thumbnail', 'hero_image']
+    form_columns = ['title', 'price', 'period', 'cpu', 'gpu', 'ram',
+                    'hd', 'os', 'shop_description', 'thumbnail',
+                    'hero_image', 'is_public']
 
 
 class ResourceRequestsAdmin(AdminView):
