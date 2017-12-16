@@ -21,6 +21,8 @@ USER_RESOURCES_REQUEST_MESSAGE_LENGTH = 50
 class UserModelView(sqla.ModelView):
     list_template = 'list.html'
     create_template = 'create.html'
+    edit_template = 'edit.html'
+
     def is_accessible(self):
         """Prevent administration of ResourceRequests unless the currently
         logged-in user has the "end-user" role.
@@ -48,7 +50,7 @@ class PurchaseUser(UserModelView):
 class CreditCardUser(UserModelView):
     column_list = ['number', 'name', 'exp_date']
     form_columns = ['number', 'name', 'exp_date', 'cvv']
-    column_labels = dict(number='Número', name='Nome', exp_date='Data de Vencimento')
+    column_labels = dict(number='Número', name='Nome', exp_date='Data de Vencimento', cvv='CVV')
     list_template = 'list.html'
 
     def _number_formatter(view, context, model, name):
