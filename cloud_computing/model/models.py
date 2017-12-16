@@ -64,7 +64,7 @@ class Plan(db.Model):
     slug_url = db.Column(db.Text, unique=True)
     thumbnail = db.Column(db.Text, default='http://placehold.it/700x400')
     hero_image = db.Column(db.Text, default='http://placehold.it/900x400')
-    is_public = db.Column(db.Boolean, server_default='false')
+    is_public = db.Column(db.Boolean, default='false')
 
     os = db.relationship('Os', backref=db.backref('plans'))
     cpu = db.relationship('Cpu', backref=db.backref('plans'))
