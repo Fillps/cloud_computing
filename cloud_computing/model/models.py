@@ -60,7 +60,7 @@ class User(db.Model, UserMixin):
 
 class Plan(db.Model):
     id = db.Column(db.Integer(), primary_key=True)
-    title = db.Column(db.Text, unique=True)
+    title = db.Column(db.Text, unique=True, default='Customizado')
     price = db.Column(db.Float(), nullable=False)
     duration_months = db.Column(db.Integer, nullable=False)
     cpu_model = db.Column(db.Text, db.ForeignKey('cpu.model'), nullable=False)
@@ -85,6 +85,14 @@ class Plan(db.Model):
 
     def __str__(self):
         return self.title
+
+
+@event.listens_for(Plan, 'after_insert')
+def plan_after_insert(maper, connection, target):
+    if target.title == 'Customizado':
+        connection.execute(Plan.__table__.update()
+                           .where(Plan.__table__.c.id==target.id)
+                           .values(title='Customizado-' + str(target.id)))
 
 
 class ResourceRequests(db.Model):
@@ -209,11 +217,13 @@ class Purchase(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     credit_card_id = db.Column(db.Integer, db.ForeignKey('credit_card.id'), nullable=False)
     plan_id = db.Column(db.Integer, db.ForeignKey('plan.id'), nullable=False)
+    user_plan_id = db.Column(db.Integer, db.ForeignKey('user_plan.id'))
     date = db.Column(db.DateTime, server_default=func.now())
 
     user = db.relationship('User', backref=db.backref('purchase'))
     credit_card = db.relationship('CreditCard', backref=db.backref('purchase'))
-    plan = db.relationship('Plan', backref=db.backref('purchase'))
+    plan = db.relationship('Plan', backref=db.backref('purchase'), )
+    user_plan = db.relationship('UserPlan', backref=db.backref('purchases'), foreign_keys=[user_plan_id])
 
 
 @event.listens_for(Purchase, 'after_insert')
@@ -221,17 +231,15 @@ def purchase_after_insert(maper, connection, target):
     """Creates or updates a UserPlan and updates the end_date by the plan period."""
     @event.listens_for(Session, "after_flush", once=True)
     def receive_after_flush(session, context):
-        user_plan = UserPlan.query.filter_by(user_id=target.user_id,
-                                             plan_id=target.plan_id).first()
-        if user_plan is None:
+
+        if target.user_plan_id is None:
             user_plan = UserPlan(user_id=target.user_id, plan_id=target.plan_id, first_purchase_id=target.id)
             user_plan.end_date = add_months(datetime.datetime.now(), target.plan.period)
             session.add(user_plan)
         else:
-            session.add(PlanPurchase(user_plan_id=user_plan.id, purchase_id=target.id))
             connection.execute(UserPlan.__table__.update()
-                               .where(UserPlan.__table__.c.id==user_plan.id)
-                               .values(end_date=add_months(user_plan.end_date, target.plan.period)))
+                               .where(UserPlan.__table__.c.id==target.user_plan_id)
+                               .values(end_date=add_months(target.user_plan.end_date, target.plan.period)))
 
 
 class Server(db.Model):
@@ -581,30 +589,24 @@ class UserPlan(db.Model):
 
     plan = db.relationship('Plan', backref=db.backref('user_plan'))
     user = db.relationship('User', backref=db.backref('user_plan'))
-    first_purchase = db.relationship('Purchase', backref=db.backref('first_user_plan'))
-    purchases = db.relationship('Purchase', secondary='plan_purchase', backref=db.backref('user_plan'))
     server = db.relationship('Server', backref=db.backref('user_plans'))
 
 
 @event.listens_for(UserPlan, 'after_insert')
 def purchase_after_insert(maper, connection, target):
-    @event.listens_for(Session, "after_flush", once=True)
-    def receive_after_flush(session, context):
-        db.session.add(PlanPurchase(user_plan_id=target.id, purchase_id=target.first_purchase_id))
+    connection.execute(Purchase.__table__.update()
+                       .where(Purchase.__table__.c.id==target.first_purchase_id)
+                       .values(user_plan_id=target.id))
+    # @event.listens_for(Session, "after_flush", once=True)
+    # def receive_after_flush(session, context):
+    #     db.session.add(PlanPurchase(user_plan_id=target.id, purchase_id=target.first_purchase_id))
 
 
-class PlanPurchase(db.Model):
-    user_plan_id = db.Column(db.Integer, db.ForeignKey('user_plan.id'), primary_key=True)
-    purchase_id = db.Column(db.Integer, db.ForeignKey('purchase.id'), primary_key=True)
-
-
-class UserServer(db.Model):
-    server_id = db.Column(db.Integer, db.ForeignKey('server.id'), nullable=False, primary_key=True)
+class UserPlanStats(db.Model):
     user_plan_id = db.Column(db.Integer, db.ForeignKey('user_plan.id'), nullable=False, primary_key=True)
-    date = db.Column(db.DateTime, default=func.now())
+    date = db.Column(db.DateTime, primary_key=True, default=func.now())
     cpu_usage = db.Column(db.Float)
     disk_usage = db.Column(db.Float)
 
-    server = db.relationship('Server', backref=db.backref('user_servers'))
-    user_plan = db.relationship('UserPlan', backref=db.backref('user_servers'))
+    user_plan = db.relationship('UserPlan', backref=db.backref('user_plan_stats'))
 

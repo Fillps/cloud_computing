@@ -2,8 +2,7 @@
 import calendar
 import datetime
 
-from sqlalchemy import func
-from wtforms import TextAreaField, IntegerField, FloatField
+from wtforms import TextAreaField, IntegerField
 from wtforms.widgets import TextArea
 
 
@@ -45,3 +44,4 @@ def add_months(sourcedate, months):
     month = month % 12 + 1
     day = min(sourcedate.day, calendar.monthrange(year, month)[1])
     return datetime.date(year, month, day)
+

@@ -12,9 +12,12 @@ from flask_security import current_user
 from markupsafe import Markup
 from sqlalchemy import func
 from werkzeug.utils import redirect
+from wtforms import IntegerField, BooleanField
 
-from cloud_computing.model.models import ResourceRequests, CreditCard, Purchase, UserPlan
+from cloud_computing.model.models import ResourceRequests, CreditCard, Purchase, UserPlan, User
 from cloud_computing.utils.form_utils import CKTextAreaField
+from cloud_computing.view.admin import UserAdmin
+
 
 USER_RESOURCES_REQUEST_MESSAGE_LENGTH = 50
 
@@ -29,7 +32,26 @@ class UserModelView(sqla.ModelView):
 
 class UserPlanView(UserModelView):
     can_create = True
-    column_list = ['plan', 'server', 'start_date', 'end_date']
+    can_view_details = True
+    can_delete = False
+    column_list = ['id', 'plan', 'server', 'start_date', 'end_date']
+    form_excluded_columns = ['id', 'plan', 'server', 'start_date', 'end_date',
+                             'user', 'purchases', 'user_servers']
+
+    def scaffold_form(self):
+        """Overrides the scaffold_form function. Adds the quantity field to the form."""
+        form_class = super(UserPlanView, self).scaffold_form()
+
+        form_class.renew = BooleanField('Deseja renovar o plano?')
+
+        return form_class
+
+    def on_model_change(self, form, model, is_created):
+        if form.renew.data is True:
+            self.session.add(Purchase(user=current_user,
+                                      credit_card=current_user.credit_cards[0],
+                                      plan=model.plan,
+                                      user_plan=model))
 
     def get_count_query(self):
         """Count of the requests with the user_id equal to the current user."""
@@ -40,17 +62,14 @@ class UserPlanView(UserModelView):
         return super(UserPlanView, self).get_query().filter(UserPlan.user_id == current_user.id)
 
 
-class UserServerView(UserModelView):
-    can_create = True
-
-
 class PurchaseUser(UserModelView):
     can_view_details = True
     can_edit = False
     can_create = True
+    can_delete = False
 
-    column_list = ['id', 'plan', 'credit_cards', 'plan.price']
-    column_labels = dict(id='Id', plan='Plano', credit_cards='Cartões de Crédito')
+    column_list = ['id', 'plan', 'user_plan', 'credit_card', 'plan.price', 'date']
+    column_labels = dict(id='Id', plan='Plano', credit_cards='Cartões de Crédito', date='Data')
 
     form_columns = ['plan', 'credit_card']
 
@@ -74,7 +93,7 @@ class CreditCardUser(UserModelView):
     def _number_formatter(view, context, model, name):
         """Format the card number to show only the last 4 digits."""
         number_str = repr(model.number)
-        return '****' + number_str[len(number_str)-4:]
+        return '****' + number_str[len(number_str) - 4:]
 
     column_formatters = {
         'number': _number_formatter,
@@ -90,6 +109,25 @@ class CreditCardUser(UserModelView):
 
     def on_model_change(self, form, model, is_created):
         model.user_id = current_user.id
+
+
+class UserInfoUser(UserAdmin):
+
+    form_columns = ['name', 'last_name', 'email', 'cpf', 'cnpj', 'company']
+
+    def get_count_query(self):
+        """Count of the requests with the user_id equal to the current user."""
+        return self.session.query(func.count(User.id)).filter(User.id == current_user.id)
+
+    def get_query(self):
+        """Select only the requests with the user_id equal to the current user."""
+        return super(UserInfoUser, self).get_query().filter(User.id == current_user.id)
+
+    def is_accessible(self):
+        """Prevent administration of ResourceRequests unless the currently
+        logged-in user has the "end-user" role.
+        """
+        return current_user.has_role('end-user')
 
 
 class ResourceRequestsUser(UserModelView):

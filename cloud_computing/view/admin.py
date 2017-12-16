@@ -25,6 +25,7 @@ class AdminView(sqla.ModelView):
 
 
 class UserAdmin(AdminView):
+    can_delete = False
     # Don't display the password on the list of Users
     column_list = ['id', 'name', 'last_name', 'email', 'cpf', 'cnpj',
                    'company', 'active', 'confirmed_at', 'roles']
