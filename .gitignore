@@ -5,5 +5,4 @@ cloud_computing.egg-info/
 **/__pycache__/
 **/.idea/
 **/*.pyc
-*.lock
 .env
