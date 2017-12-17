@@ -126,7 +126,7 @@ def plan_after_insert(maper, connection, target):
         values['price'] = target.calculate_price()
     if values:
         connection.execute(Plan.__table__.update()
-                           .where(Plan.__table__.c.id==target.id)
+                           .where(Plan.__table__.c.id == target.id)
                            .values(**values))
 
 
@@ -305,6 +305,7 @@ class Purchase(db.Model):
 @event.listens_for(Purchase, 'after_insert')
 def purchase_after_insert(maper, connection, target):
     """Creates or updates a UserPlan and updates the end_date by the plan period."""
+
     @event.listens_for(Session, "after_flush", once=True)
     def receive_after_flush(session, context):
 
@@ -314,7 +315,7 @@ def purchase_after_insert(maper, connection, target):
             session.add(user_plan)
         else:
             connection.execute(UserPlan.__table__.update()
-                               .where(UserPlan.__table__.c.id==target.user_plan_id)
+                               .where(UserPlan.__table__.c.id == target.user_plan_id)
                                .values(end_date=add_months(target.user_plan.end_date, target.plan.period)))
 
 
@@ -400,7 +401,6 @@ class ServerResource:
     @declared_attr
     def server(self):
         return db.relationship('Server', backref=db.backref(self.backref_plan))
-
     quantity = db.Column(db.Integer, default=0)
 
 
@@ -692,7 +692,7 @@ class UserPlan(db.Model):
 @event.listens_for(UserPlan, 'after_insert')
 def purchase_after_insert(maper, connection, target):
     connection.execute(Purchase.__table__.update()
-                       .where(Purchase.__table__.c.id==target.first_purchase_id)
+                       .where(Purchase.__table__.c.id == target.first_purchase_id)
                        .values(user_plan_id=target.id))
 
 
@@ -703,4 +703,3 @@ class UserPlanStats(db.Model):
     disk_usage = db.Column(db.Float)
 
     user_plan = db.relationship('UserPlan', backref=db.backref('user_plan_stats'))
-

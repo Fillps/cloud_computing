@@ -90,7 +90,6 @@ class RoleAdmin(AdminView):
 
 
 class PlanAdmin(AdminView):
-
     column_list = ['title', 'auto_price', 'price', 'period',
                    'cpu', 'os', 'plan_gpus', 'plan_rams', 'plan_hds', 'is_public']
 
@@ -98,11 +97,17 @@ class PlanAdmin(AdminView):
                               'is_public']
 
     form_columns = ['title', 'auto_price', 'price', 'period', 'shop_description', 'thumbnail',
-                    'hero_image', 'is_public', 'cpu', 'os',]
+                    'hero_image', 'is_public', 'cpu', 'os', ]
 
-    inline_models = [(PlanGpu, dict(form_columns=['plan_id', 'gpu_model', 'gpu', 'quantity'])),
-                     (PlanRam, dict(form_columns=['plan_id', 'ram_model', 'ram', 'quantity'])),
-                     (PlanHd, dict(form_columns=['plan_id', 'hd_model', 'hd', 'quantity']))]
+    inline_models = [(PlanGpu,
+                      dict(form_columns=['plan_id', 'gpu_model', 'gpu', 'quantity'],
+                           column_labels=dict(quantity='Quantidade', gpu='GPU'))),
+                     (PlanRam,
+                      dict(form_columns=['plan_id', 'ram_model', 'ram', 'quantity'],
+                           column_labels=dict(quantity='Quantidade', ram='RAM'))),
+                     (PlanHd,
+                      dict(form_columns=['plan_id', 'hd_model', 'hd', 'quantity'],
+                           column_labels=dict(quantity='Quantidade', hd='HD')))]
 
     column_labels = dict(
         title='Título',
@@ -276,14 +281,27 @@ class HdAdmin(ComponentAdmin):
 
 
 class ServerAdmin(AdminView):
-    column_list = ['id', 'cpu', 'cores_available', 'gpu_slot_available', 'server_gpus', 'ram_slot_available', 'ram_max', 'ram_total',
+    column_list = ['id', 'cpu', 'cores_available', 'gpu_slot_available', 'server_gpus', 'ram_slot_available', 'ram_max',
+                   'ram_total',
                    'ram_available', 'hd_slot_available', 'hd_total', 'hd_available', 'ssd_total', 'ssd_available', 'os']
     form_columns = ['cpu', 'gpu_slot_total', 'ram_slot_total', 'ram_max', 'hd_slot_total', 'os']
 
-    inline_models = [(ServerGpu, dict(form_columns=['server_id', 'gpu_model', 'gpu', 'quantity'])),
-                     (ServerRam, dict(form_columns=['server_id', 'ram_model', 'ram', 'quantity'])),
-                     (ServerHd, dict(form_columns=['server_id', 'hd_model', 'hd', 'quantity']))]
+    inline_models = [(ServerGpu,
+                      dict(form_columns=['server_id', 'gpu_model', 'gpu', 'quantity'],
+                           column_labels=dict(quantity='Quantidade', gpu='GPU'))),
+                     (ServerRam,
+                      dict(form_columns=['server_id', 'ram_model', 'ram', 'quantity'],
+                           column_labels=dict(quantity='Quantidade', ram='RAM'))),
+                     (ServerHd,
+                      dict(form_columns=['server_id', 'hd_model', 'hd', 'quantity'],
+                           column_labels=dict(quantity='Quantidade', hd='HD')))]
 
-
-
-
+    def on_model_delete(self, model):
+        if model.cpu.cores != model.cores_available:
+            raise ValidationError("O servidor não pode ser excluido pois o CPU ainda está em uso.")
+        if model.server_gpus:
+            raise ValidationError("O servidor ainda possui GPUs. Remova elas antes.")
+        if model.server_rams:
+            raise ValidationError("O servidor ainda possui Memórias RAM. Remova elas antes.")
+        if model.server_hds:
+            raise ValidationError("O servidor ainda possui HDs. Remova eles antes.")
