@@ -88,17 +88,17 @@ class RoleAdmin(AdminView):
 
 
 class PlanAdmin(AdminView):
-    column_list = ['title', 'price', 'period_months', 'cpu', 'gpu', 'ram',
+    column_list = ['title', 'price', 'duration_months', 'cpu', 'gpu', 'ram',
                    'hd', 'os', 'is_public']
-    column_searchable_list = ['title', 'price', 'period_months', 'shop_description',
+    column_searchable_list = ['title', 'price', 'duration_months', 'shop_description',
                               'is_public']
-    form_columns = ['title', 'price', 'period_months', 'cpu', 'gpu', 'ram',
+    form_columns = ['title', 'price', 'duration_months', 'cpu', 'gpu', 'ram',
                     'hd', 'os', 'shop_description', 'thumbnail',
                     'hero_image', 'is_public']
     column_labels = dict(
         title='Título',
         price='Preço',
-        period_months='Período em meses',
+        duration_months='Duração em meses',
         shop_description='Descrição para a loja',
         cpu='CPU',
         gpus='GPUs',
