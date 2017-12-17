@@ -351,7 +351,8 @@ class UserPlanAdmin(AdminView):
         server='Servidor',
         start_date='Data de Início',
         end_date='Data de Fim',
-        time_remaining='Tempo Restante')
+        time_remaining='Tempo Restante',
+        user_plan_stats='Estatísticas de Uso')
 
     def _graph_formatter(view, context, model, name):
         date_l = []
