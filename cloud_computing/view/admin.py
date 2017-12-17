@@ -10,7 +10,7 @@ from sqlalchemy import func
 from wtforms import ValidationError, SelectField
 from wtforms.fields import PasswordField, IntegerField
 
-from cloud_computing.model.models import ResourceRequests, PlanGpu, PlanRam, PlanHd
+from cloud_computing.model.models import ResourceRequests
 from cloud_computing.utils.form_utils import ReadonlyCKTextAreaField, CKTextAreaField, ReadOnlyIntegerField
 
 

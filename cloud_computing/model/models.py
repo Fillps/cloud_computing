@@ -9,7 +9,6 @@ from wtforms import ValidationError
 from sqlalchemy.orm import validates, Session
 
 from cloud_computing.model.database import db
-from cloud_computing.utils.db_utils import get, get_or_create
 
 # Create a table to support many-to-many relationship between Users and Roles
 from cloud_computing.utils.form_utils import add_months
@@ -337,7 +336,7 @@ class Server(db.Model):
     @validates('cpu_model')
     def cpu_model_update(self, key, value):
         """Update the cores_available when the cpu_model updates."""
-        new_cpu = get(db.session, Cpu, model=value)
+        new_cpu = Cpu.query.filter_by(model=value).first()
         if self.cpu_model is None:
             cores_available = new_cpu.cores
         elif self.cpu.available < 1:
