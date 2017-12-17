@@ -8,8 +8,9 @@ from sqlalchemy import func
 from wtforms import ValidationError, SelectField
 from wtforms.fields import PasswordField, IntegerField
 
-from cloud_computing.model.models import ResourceRequests
+from cloud_computing.model.models import ResourceRequests, PlanGpu, PlanRam, PlanHd
 from cloud_computing.utils.form_utils import ReadonlyCKTextAreaField, CKTextAreaField, ReadOnlyIntegerField
+
 
 ADMIN_RESOURCES_REQUEST_MESSAGE_LENGTH = 100
 REMOVE_ID = '2'
@@ -89,13 +90,17 @@ class RoleAdmin(AdminView):
 
 
 class PlanAdmin(AdminView):
-    column_list = ['title', 'price', 'duration_months', 'cpu', 'gpu', 'ram',
-                   'hd', 'os', 'is_public']
-    column_searchable_list = ['title', 'price', 'duration_months', 'shop_description',
+
+    column_list = ['title', 'auto_price', 'price', 'duration_months',
+                   'cpu', 'os', 'gpu', 'ram', 'hd', 'is_public']
+
+    column_searchable_list = ['title', 'auto_price', 'duration_months', 'period', 'shop_description',
                               'is_public']
-    form_columns = ['title', 'price', 'duration_months', 'cpu', 'gpu', 'ram',
+
+    form_columns = ['title', 'auto_price', 'price', 'duration_months', 'cpu', 'gpu', 'ram',
                     'hd', 'os', 'shop_description', 'thumbnail',
                     'hero_image', 'is_public']
+
     column_labels = dict(
         title='Título',
         price='Preço',
@@ -106,7 +111,8 @@ class PlanAdmin(AdminView):
         rams='RAMs',
         hds='HDs',
         os='OS',
-        is_public='É Público?')
+        is_public='É Público?',
+        auto_price='Preço automático?')
 
 
 class ResourceRequestsAdmin(AdminView):
