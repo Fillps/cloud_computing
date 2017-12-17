@@ -1,6 +1,0 @@
-{
-  "tests/test_model.py::test_plan_model": true,
-  "tests/test_model.py::test_user_model": true,
-  "tests/test_url.py::test_api_request[/-200]": true,
-  "tests/test_url.py::test_api_request[/{item_name}-200]": true
-}
