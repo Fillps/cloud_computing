@@ -9,7 +9,7 @@ from wtforms import ValidationError, SelectField
 from wtforms.fields import PasswordField, IntegerField
 
 from cloud_computing.model.models import ResourceRequests
-from cloud_computing.utils.util import ReadonlyCKTextAreaField, CKTextAreaField, ReadOnlyIntegerField
+from cloud_computing.utils.form_utils import ReadonlyCKTextAreaField, CKTextAreaField, ReadOnlyIntegerField
 
 ADMIN_RESOURCES_REQUEST_MESSAGE_LENGTH = 100
 REMOVE_ID = '2'
@@ -88,17 +88,18 @@ class RoleAdmin(AdminView):
 
 
 class PlanAdmin(AdminView):
-    column_list = ['title', 'price', 'period', 'cpu', 'gpu', 'ram',
+    column_list = ['title', 'price', 'duration_months', 'cpu', 'gpu', 'ram',
                    'hd', 'os', 'is_public']
-    column_searchable_list = ['title', 'price', 'period', 'shop_description',
+    column_searchable_list = ['title', 'price', 'duration_months', 'shop_description',
                               'is_public']
-    form_columns = ['title', 'price', 'period', 'cpu', 'gpu', 'ram',
+    form_columns = ['title', 'price', 'duration_months', 'cpu', 'gpu', 'ram',
                     'hd', 'os', 'shop_description', 'thumbnail',
                     'hero_image', 'is_public']
     column_labels = dict(
         title='Título',
         price='Preço',
-        period='Período',
+        duration_months='Duração em meses',
+        shop_description='Descrição para a loja',
         cpu='CPU',
         gpus='GPUs',
         rams='RAMs',
@@ -181,7 +182,10 @@ class ComponentAdmin(AdminView):
         """Overrides the scaffold_form function. Adds the quantity field to the form."""
         form_class = super(ComponentAdmin, self).scaffold_form()
 
-        form_class.addOrRemove = SelectField("Selecione", choices=[(ADD_ID, 'Adicionar'), (REMOVE_ID, 'Remover')])
+        form_class.addOrRemove = SelectField(
+            "Selecione", choices=[(ADD_ID, 'Adicionar'),
+                                  (REMOVE_ID, 'Remover')])
+
         form_class.quantity = IntegerField('Quantidade', default=0)
 
         return form_class

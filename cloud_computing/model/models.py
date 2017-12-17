@@ -59,7 +59,7 @@ class Plan(db.Model):
     id = db.Column(db.Integer(), primary_key=True)
     title = db.Column(db.Text, unique=True)
     price = db.Column(db.Float(), nullable=False)
-    period = db.Column(db.Integer, nullable=False)
+    duration_months = db.Column(db.Integer, nullable=False)
     cpu_model = db.Column(db.Text, db.ForeignKey('cpu.model'), nullable=False)
     os_name = db.Column(db.Text, db.ForeignKey('os.name'), nullable=False)
     shop_description = db.Column(db.Text)
@@ -95,7 +95,6 @@ class ResourceRequests(db.Model):
 
 
 class Resource:
-    """Base class of Cpu, Gpu, Ram, Hd. Declares common attributes and functions shared by this classes."""
     model = db.Column(db.Text, primary_key=True)
     price = db.Column(db.Float, nullable=False)
     total = db.Column(db.Integer, nullable=False)
@@ -150,7 +149,6 @@ class Os(db.Model):
 
 
 class PlanResource:
-    """Base class of PlanGpu, PlanRam, PlanHd. Declares common attributes and functions shared by this classes."""
     backref_plan = 'plan_comps'
     quantity = db.Column(db.Integer)
 
@@ -208,7 +206,6 @@ class Purchase(db.Model):
 
 
 class Server(db.Model):
-    """Definition of Server"""
     id = db.Column(db.Integer, primary_key=True)
     cpu_model = db.Column(db.Text, db.ForeignKey('cpu.model'), nullable=False)
     cores_available = db.Column(db.Integer, default=0)
@@ -270,9 +267,8 @@ class Server(db.Model):
 
 
 class ServerResource:
-    """Definition of ServerResource"""
-
     backref_plan = 'server_resources'
+    quantity = db.Column(db.Integer, default=0)
 
     @declared_attr
     def server_id(self):
@@ -282,11 +278,8 @@ class ServerResource:
     def server(self):
         return db.relationship('Server', backref=db.backref(self.backref_plan))
 
-    quantity = db.Column(db.Integer, default=0)
-
 
 class ServerGpu(db.Model, ServerResource):
-    """Definition of ServerGpu"""
     backref_plan = 'server_gpus'
     gpu_model = db.Column(db.Text, db.ForeignKey('gpu.model'), primary_key=True)
     total_capacity = db.Column(db.Integer, default=0)
@@ -306,17 +299,17 @@ class ServerGpu(db.Model, ServerResource):
             return value
         elif self.gpu.available < value - self.quantity:
             raise ValidationError(
-                "Não existem recursos diponíveis. Tente diminuir a quantidade ou adicionar novos recursos.")
+                "Não existem recursos disponíveis. Tente diminuir a quantidade ou adicionar novos recursos.")
         elif self.server.gpu_slot_available < value - self.quantity:
             raise ValidationError(
-                "Não existem slots diponíveis. Tente diminuir a quantidade de recursos.")
+                "Não existem slots disponíveis. Tente diminuir a quantidade de recursos.")
 
         net_capacity = self.gpu.ram * value - self.gpu.ram * self.quantity
 
         if self.available_capacity + net_capacity < 0:
             raise ValidationError(
                 "O uso do recurso está maior do que o disponível. Tente diminuir a utilização dos recursos"
-                " ou aumente a quantiadde de recursos a serem adicionados.")
+                " ou aumente a quantidade de recursos a serem adicionados.")
         else:
             self.total_capacity += net_capacity
             self.available_capacity += net_capacity
@@ -327,15 +320,14 @@ class ServerGpu(db.Model, ServerResource):
 
 @event.listens_for(ServerGpu, 'before_insert')
 def server_gpu_before_insert(maper, connection, target):
-    """
-        Before the insert, updates the total_capacity, available_capacity, gpu.available
-        and server.gpu_slot_available based on the quantity.
+    """Before the insert, updates the total_capacity, available_capacity,
+    gpu.available and server.gpu_slot_available based on the quantity.
     """
     if target.gpu.available < target.quantity:
-        raise ValidationError("Não existem recursos diponíveis. Tente diminuir "
+        raise ValidationError("Não existem recursos disponíveis. Tente diminuir "
                               "a quantidade ou adicionar novos recursos.")
     elif target.server.gpu_slot_available < target.quantity:
-        raise ValidationError("Não existem slots no servidor diponíveis."
+        raise ValidationError("Não existem slots no servidor disponíveis."
                               "Tente diminuir a quantidade.")
     else:
         target.available_capacity = target.gpu.ram * target.quantity
@@ -350,9 +342,8 @@ def server_gpu_before_insert(maper, connection, target):
 
 @event.listens_for(ServerGpu, 'before_delete')
 def server_gpu_before_delete(maper, connection, target):
-    """
-        Before the delete, updates the gpu.available and server.gpu_slot_available
-        based on the quantity.
+    """ Before the delete, updates the gpu.available and
+    server.gpu_slot_available based on the quantity.
     """
     if target.available_capacity < target.total_capacity:
         raise ValidationError('Erro! O GPU a ser deletado ainda está em uso!')
@@ -366,16 +357,14 @@ def server_gpu_before_delete(maper, connection, target):
 
 
 class ServerRam(db.Model, ServerResource):
-    """Definition of ServerRam"""
     backref_plan = 'server_rams'
     ram_model = db.Column(db.Text, db.ForeignKey('ram.model'), primary_key=True)
     ram = db.relationship('Ram', backref=db.backref(backref_plan))
 
     @validates('quantity')
     def update_quantity(self, key, value):
-        """
-            When quantity is updated, updates the server.ram_total, server.ram_available, ram.available
-            and server.ram_slot_available.
+        """When quantity is updated, updates the server.ram_total,
+        server.ram_available, ram.available and server.ram_slot_available.
         """
         if value < 0:
             raise ValidationError('A quantidade precisa ser maior que zero.')
@@ -383,17 +372,17 @@ class ServerRam(db.Model, ServerResource):
             return value
         elif self.ram.available < value - self.quantity:
             raise ValidationError(
-                "Não existem recursos diponíveis. Tente diminuir a quantidade ou adicionar novos recursos.")
+                "Não existem recursos disponíveis. Tente diminuir a quantidade ou adicionar novos recursos.")
         elif self.server.ram_slot_available < value - self.quantity:
             raise ValidationError(
-                "Não existem slots diponíveis. Tente diminuir a quantidade de recursos.")
+                "Não existem slots disponíveis. Tente diminuir a quantidade de recursos.")
 
         net_capacity = self.ram.capacity * value - self.ram.capacity * self.quantity
 
         if self.server.ram_available + net_capacity < 0:
             raise ValidationError("O uso do recurso está maior do que o disponível. "
                                   "Tente diminuir a utilização dos recursos ou aumente "
-                                  "a quantiadde de recursos a serem adicionados.")
+                                  "a quantidade de recursos a serem adicionados.")
         elif self.server.ram_max < self.server.ram_total + net_capacity:
             raise ValidationError("RAM máxima do servidor atingida.")
         else:
@@ -406,15 +395,14 @@ class ServerRam(db.Model, ServerResource):
 
 @event.listens_for(ServerRam, 'before_insert')
 def server_ram_before_insert(maper, connection, target):
-    """
-        Before the insert, updates the server.ram_total, server.ram_available, ram.available
-        and server.ram_slot_available based on the quantity.
+    """ Before the insert, updates the server.ram_total, server.ram_available,
+    ram.available and server.ram_slot_available based on the quantity.
     """
     if target.ram.available < target.quantity:
-        raise ValidationError("Não existem recursos diponíveis. Tente diminuir "
+        raise ValidationError("Não existem recursos disponíveis. Tente diminuir "
                               "a quantidade ou adicionar novos recursos.")
     elif target.server.ram_slot_available < target.quantity:
-        raise ValidationError("Não existem slots no servidor diponíveis."
+        raise ValidationError("Não existem slots no servidor disponíveis."
                               "Tente diminuir a quantidade.")
     elif target.server.ram_max < target.server.ram_total + target.ram.capacity * target.quantity:
         raise ValidationError("RAM máxima do servidor atingida.")
@@ -432,9 +420,8 @@ def server_ram_before_insert(maper, connection, target):
 
 @event.listens_for(ServerRam, 'before_delete')
 def server_ram_before_delete(maper, connection, target):
-    """
-        Before the delete, updates the server.ram_total, server.ram_available, ram.available
-        and server.ram_slot_available based on the quantity.
+    """ Before the delete, updates the server.ram_total, server.ram_available,
+    ram.available and server.ram_slot_available based on the quantity.
     """
     if target.quantity * target.ram.capacity > target.server.ram_available:
         raise ValidationError('Erro! A RAM a ser deletada ainda está em uso!')
@@ -451,16 +438,15 @@ def server_ram_before_delete(maper, connection, target):
 
 
 class ServerHd(db.Model, ServerResource):
-    """Definition of ServerHd"""
     backref_plan = 'server_hds'
     hd_model = db.Column(db.Text, db.ForeignKey('hd.model'), primary_key=True)
     hd = db.relationship('Hd', backref=db.backref(backref_plan))
 
     @validates('quantity')
     def update_quantity(self, key, value):
-        """
-            When quantity is updated, updates the server.hd_total, server.hd_available,
-            server.ssd_total, server.ssd_available, hd.available and server.hd_slot_available.
+        """ When quantity is updated, updates the server.hd_total,
+        server.hd_available, server.ssd_total, server.ssd_available,
+        hd.available and server.hd_slot_available.
         """
         if value < 0:
             raise ValidationError('A quantidade precisa ser maior que zero.')
@@ -468,10 +454,10 @@ class ServerHd(db.Model, ServerResource):
             return value
         elif self.hd.available < value - self.quantity:
             raise ValidationError(
-                "Não existem recursos diponíveis. Tente diminuir a quantidade ou adicionar novos recursos.")
+                "Não existem recursos disponíveis. Tente diminuir a quantidade ou adicionar novos recursos.")
         elif self.server.hd_slot_available < value - self.quantity:
             raise ValidationError(
-                "Não existem slots diponíveis. Tente diminuir a quantidade de recursos.")
+                "Não existem slots disponíveis. Tente diminuir a quantidade de recursos.")
 
         net_capacity = self.hd.capacity * value - self.hd.capacity * self.quantity
 
@@ -479,7 +465,7 @@ class ServerHd(db.Model, ServerResource):
                 (self.hd.is_ssd is False and self.server.hd_available + net_capacity < 0):
             raise ValidationError(
                 "O uso do recurso está maior do que o disponível. Tente diminuir a utilização dos recursos"
-                " ou aumente a quantiadde de recursos a serem adicionados.")
+                " ou aumente a quantidade de recursos a serem adicionados.")
         else:
             if self.hd.is_ssd is True:
                 self.server.ssd_total += net_capacity
@@ -494,15 +480,15 @@ class ServerHd(db.Model, ServerResource):
 
 @event.listens_for(ServerHd, 'before_insert')
 def server_hd_before_insert(maper, connection, target):
-    """
-        Before the insert, updates the server.hd_total, server.hd_available, server.ssd_total,
-        server.ssd_available, hd.available and server.hd_slot_available based on the quantity.
+    """Before the insert, updates the server.hd_total, server.hd_available,
+    server.ssd_total, server.ssd_available, hd.available and
+    server.hd_slot_available based on the quantity.
     """
     if target.hd.available < target.quantity:
-        raise ValidationError("Não existem recursos diponíveis. Tente diminuir "
+        raise ValidationError("Não existem recursos disponíveis. Tente diminuir "
                               "a quantidade ou adicionar novos recursos.")
     elif target.server.hd_slot_available < target.quantity:
-        raise ValidationError("Não existem slots no servidor diponíveis."
+        raise ValidationError("Não existem slots no servidor disponíveis."
                               "Tente diminuir a quantidade.")
     else:
         added_capacity = target.hd.capacity * target.quantity
@@ -523,9 +509,9 @@ def server_hd_before_insert(maper, connection, target):
 
 @event.listens_for(ServerHd, 'before_delete')
 def server_hd_before_delete(maper, connection, target):
-    """
-        Before the delete, updates the server.hd_total, server.hd_available, server.ssd_total,
-        server.ssd_available, hd.available and server.hd_slot_available based on the quantity.
+    """Before the delete, updates the server.hd_total, server.hd_available,
+    server.ssd_total, server.ssd_available, hd.available and
+    server.hd_slot_available based on the quantity.
     """
     if target.quantity * target.hd.capacity > target.server.hd_available:
         raise ValidationError('Erro! O HD a ser deletado ainda está em uso!')
