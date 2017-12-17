@@ -59,7 +59,7 @@ class Plan(db.Model):
     id = db.Column(db.Integer(), primary_key=True)
     title = db.Column(db.Text, unique=True)
     price = db.Column(db.Float(), nullable=False)
-    period = db.Column(db.Integer, nullable=False)
+    period_months = db.Column(db.Integer, nullable=False)
     cpu_model = db.Column(db.Text, db.ForeignKey('cpu.model'), nullable=False)
     os_name = db.Column(db.Text, db.ForeignKey('os.name'), nullable=False)
     shop_description = db.Column(db.Text)
