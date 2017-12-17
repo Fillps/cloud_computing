@@ -31,12 +31,20 @@ class UserModelView(sqla.ModelView):
 
 
 class UserPlanView(UserModelView):
-    can_create = True
+    can_create = False
     can_view_details = True
     can_delete = False
     column_list = ['id', 'plan', 'server', 'start_date', 'end_date']
+
+    column_labels = dict(
+        id='Id',
+        plan='Plano',
+        server='Servidor',
+        start_date='Data de Início',
+        end_date='Data de Fim')
+
     form_excluded_columns = ['id', 'plan', 'server', 'start_date', 'end_date',
-                             'user', 'purchases', 'user_servers']
+                             'user', 'purchases', 'user_servers', 'user_plan_stats']
 
     def scaffold_form(self):
         """Overrides the scaffold_form function. Adds the quantity field to the form."""
@@ -69,7 +77,12 @@ class PurchaseUser(UserModelView):
     can_delete = False
 
     column_list = ['id', 'plan', 'user_plan', 'credit_card', 'plan.price', 'date']
-    column_labels = dict(id='Id', plan='Plano', credit_cards='Cartões de Crédito', date='Data')
+    column_labels = dict(
+        id='Id',
+        plan='Plano',
+        credit_card='Cartão de Crédito',
+        date='Data',
+        user_plan='Contratação')
 
     form_columns = ['plan', 'credit_card']
 
@@ -113,6 +126,8 @@ class CreditCardUser(UserModelView):
 
 class UserInfoUser(UserAdmin):
 
+    can_create = False
+
     form_columns = ['name', 'last_name', 'email', 'cpf', 'cnpj', 'company']
 
     def get_count_query(self):
@@ -141,11 +156,12 @@ class ResourceRequestsUser(UserModelView):
     column_details_list = ['id', 'message_date', 'message', 'admin_rel', 'answer_date', 'answer']
     form_excluded_columns = ['message_date', 'answer_date', 'answer', 'id', 'admin_rel', 'user_rel']
     column_labels = dict(
-        id='id',
+        id='Id',
         message_date='Data da Mensagem',
         admin_rel='Administrador',
         answer_date='Data da Resposta',
-        answer='Resposta')
+        answer='Resposta',
+        message='Mensagem')
 
     # CKeditor - Text editor for the answer
     extra_js = ['//cdn.ckeditor.com/4.6.0/standard/ckeditor.js']

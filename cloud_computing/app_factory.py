@@ -65,34 +65,23 @@ class AppFactory:
         admin.add_view(_adm.CpuAdmin(
             models.Cpu,
             db.session,
-            category='Componentes'))
+            category='Componentes',
+            name='CPUs'))
         admin.add_view(_adm.GpuAdmin(
             models.Gpu,
             db.session,
-            category='Componentes'))
+            category='Componentes',
+            name='GPUs'))
         admin.add_view(_adm.RamAdmin(
             models.Ram,
             db.session,
-            category='Componentes'))
+            category='Componentes',
+            name='Memórias RAM'))
         admin.add_view(_adm.HdAdmin(
             models.Hd,
             db.session,
-            category='Componentes'))
-
-        admin.add_view(_adm.ServerAdmin(
-            models.Server,
-            db.session,
-            category='Servidores'))
-
-        admin.add_view(_adm.ServerGpu(models.ServerGpu,
-                                      db.session,
-                                      category='Servidores'))
-        admin.add_view(_adm.ServerRam(models.ServerRam,
-                                      db.session,
-                                      category='Servidores'))
-        admin.add_view(_adm.ServerHd(models.ServerHd,
-                                     db.session,
-                                     category='Servidores'))
+            category='Componentes',
+            name='HDs'))
 
         admin.add_view(_adm.ServerAdmin(
             models.Server,
@@ -116,7 +105,10 @@ class AppFactory:
                 db.session,
                 category='Servidores'))
 
-        admin.add_view(_user.UserPlanView(models.UserPlan, db.session))
+        admin.add_view(_user.UserPlanView(
+            models.UserPlan,
+            db.session,
+            name='Planos Contratados'))
         admin.add_view(_user.ResourceRequestsUser(
             models.ResourceRequests,
             db.session,
@@ -126,7 +118,8 @@ class AppFactory:
             models.User,
             db.session,
             category='Conta',
-            endpoint='alterar-informacoes'))
+            endpoint='alterar-informacoes',
+            name='Alterar Informações'))
         admin.add_view(_user.CreditCardUser(
             models.CreditCard,
             db.session,
