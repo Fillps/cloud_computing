@@ -56,6 +56,15 @@ class UserAdmin(AdminView):
     column_searchable_list = ['id', 'name', 'last_name', 'email', 'cpf',
                               'cnpj', 'company', 'active', 'confirmed_at']
 
+    def _comfirmed_at_formatter(view, context, model, name):
+        if model.confirmed_at is not None:
+            return model.confirmed_at.strftime('%d/%m/%Y')
+        return model.confirmed_at
+
+    column_formatters = {
+        'confirmed_at': _comfirmed_at_formatter
+    }
+
     def scaffold_form(self):
         """On the form for creating or editing a User, don't display a field
         corresponding to the model's password field. There are two reasons
@@ -364,9 +373,21 @@ class UserPlanAdmin(AdminView):
         time_remaining = model.end_date - datetime.datetime.now()
         return str(time_remaining.days) + " dias restantes"
 
+    def _start_date_formatter(view, context, model, name):
+        if model.start_date is not None:
+            return model.start_date.strftime('%d/%m/%Y')
+        return model.start_date
+
+    def _end_date_formatter(view, context, model, name):
+        if model.end_date is not None:
+            return model.end_date.strftime('%d/%m/%Y')
+        return model.end_date
+
     column_formatters = {
         'user_plan_stats': _graph_formatter,
-        'time_remaining': _time_remaining
+        'time_remaining': _time_remaining,
+        'start_date': _start_date_formatter,
+        'end_date': _end_date_formatter
     }
 
 

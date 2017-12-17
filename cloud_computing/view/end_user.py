@@ -105,8 +105,14 @@ class CreditCardUser(UserModelView):
         number_str = repr(model.number)
         return '****' + number_str[len(number_str) - 4:]
 
+    def _exp_date_formatter(view, context, model, name):
+        if model.exp_date is not None:
+            return model.exp_date.strftime('%m/%Y')
+        return model.exp_date
+
     column_formatters = {
         'number': _number_formatter,
+        'exp_date': _exp_date_formatter
     }
 
     def get_count_query(self):
