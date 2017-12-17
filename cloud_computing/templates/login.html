@@ -26,6 +26,18 @@
                 <div class="row">
                     <div class="col-md-3"></div>
                     <div class="col-md-6">
+                        <div class="form-control-feedback">
+                            <span class="text-danger align-middle">
+                                {% for error in login_user_form.email.errors %}
+                                    <p class="fa fa-close"><strong>Erro:</strong> {{ error }} </p>
+                                {% endfor %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-3"></div>
+                    <div class="col-md-6">
                         <div class="form-group">
                             <label for="password">Senha</label>
                             <div class="input-group mb-2 mr-sm-2 mb-sm-0" id="password">
@@ -40,9 +52,6 @@
                     <div class="col-md-6">
                         <div class="form-control-feedback">
                             <span class="text-danger align-middle">
-                                {% for error in login_user_form.email.errors %}
-                                    <p class="fa fa-close"><strong>Erro:</strong> {{ error }} </p>
-                                {% endfor %}
                                 {% for error in login_user_form.password.errors %}
                                     <p class="fa fa-close"><strong>Erro:</strong> {{ error }} </p>
                                 {% endfor %}
