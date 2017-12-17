@@ -3,6 +3,9 @@
 url = "https://pypi.python.org/simple"
 verify_ssl = true
 
+[requires]
+
+python_version = "3.6"
 
 [packages]
 
@@ -14,11 +17,6 @@ flask-heroku = "*"
 psycopg2 = "*"
 gunicorn = "*"
 python-slugify = "*"
-
-
-[requires]
-
-python_version = "3.6"
 
 [dev-packages]
 
