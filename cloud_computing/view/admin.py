@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
+import datetime
 
+import pygal
 from flask_admin.contrib import sqla
 from flask_admin.contrib.sqla import validators
 from flask_security import current_user, utils
@@ -323,5 +325,48 @@ class ServerRamAdmin(ServerComponentAdmin):
 
 class ServerHdAdmin(ServerComponentAdmin):
     can_create = True
+
+
+class UserPlanAdmin(AdminView):
+
+    can_create = False
+    can_edit = False
+    can_view_details = True
+    can_delete = False
+    column_list = ['id', 'plan', 'server', 'start_date', 'end_date', 'time_remaining', 'user_plan_stats']
+    column_details_list = ['id', 'plan', 'server', 'start_date', 'end_date', 'time_remaining', 'user_plan_stats']
+
+    column_labels = dict(
+        id='Id',
+        plan='Plano',
+        server='Servidor',
+        start_date='Data de Início',
+        end_date='Data de Fim',
+        time_remaining='Tempo Restante')
+
+    def _graph_formatter(view, context, model, name):
+        date_l = []
+        cpu_usage_l = []
+        disk_usage_l = []
+        for plan_stats in model.user_plan_stats:
+            date_l.append(plan_stats.date)
+            cpu_usage_l.append(plan_stats.cpu_usage)
+            disk_usage_l.append(plan_stats.disk_usage)
+
+        date_chart = pygal.Line(x_label_rotation=20)
+        date_chart.x_labels = map(lambda d: d.strftime('%Y-%m-%d'), date_l)
+        date_chart.add("Cpu_Usage", cpu_usage_l)
+        date_chart.add("Disk_Usage", disk_usage_l)
+
+        return Markup(date_chart.render(True))
+
+    def _time_remaining(view, context, model, name):
+        time_remaining = model.end_date - datetime.datetime.now()
+        return str(time_remaining.days) + " dias restantes"
+
+    column_formatters = {
+        'user_plan_stats': _graph_formatter,
+        'time_remaining': _time_remaining
+    }
 
 

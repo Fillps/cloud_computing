@@ -1,23 +1,22 @@
 # -*- coding: utf-8 -*-
-import datetime
-import pygal
+
 from flask import flash, request
 from flask_admin import expose
 from flask_admin.babel import gettext
 from flask_admin.contrib import sqla
 from flask_admin.contrib.sqla import validators
-from flask_admin.form import rules
 from flask_admin.helpers import get_redirect_target
 from flask_admin.model.helpers import get_mdict_item_or_list
 from flask_security import current_user
 from markupsafe import Markup
 from sqlalchemy import func
 from werkzeug.utils import redirect
-from wtforms import IntegerField, BooleanField
+from wtforms import BooleanField
 
 from cloud_computing.model.models import ResourceRequests, CreditCard, Purchase, UserPlan, User
+
 from cloud_computing.utils.form_utils import CKTextAreaField
-from cloud_computing.view.admin import UserAdmin
+from cloud_computing.view.admin import UserAdmin, UserPlanAdmin
 
 
 USER_RESOURCES_REQUEST_MESSAGE_LENGTH = 50
@@ -31,21 +30,9 @@ class UserModelView(sqla.ModelView):
         return current_user.has_role('end-user')
 
 
-class UserPlanView(UserModelView):
-    can_create = False
-    can_edit = True
-    can_view_details = True
-    can_delete = False
-    column_list = ['id', 'plan', 'server', 'start_date', 'end_date', 'time_remaining', 'user_plan_stats']
-    column_details_list = ['id', 'plan', 'server', 'start_date', 'end_date', 'time_remaining', 'user_plan_stats']
+class UserPlanView(UserPlanAdmin):
 
-    column_labels = dict(
-        id='Id',
-        plan='Plano',
-        server='Servidor',
-        start_date='Data de Início',
-        end_date='Data de Fim',
-        time_remaining='Tempo Restante')
+    can_edit = True
 
     form_excluded_columns = ['id', 'plan', 'server', 'start_date', 'end_date',
                              'user', 'purchases', 'user_servers', 'user_plan_stats']
@@ -73,30 +60,11 @@ class UserPlanView(UserModelView):
         """Select only the requests with the user_id equal to the current user."""
         return super(UserPlanView, self).get_query().filter(UserPlan.user_id == current_user.id)
 
-    def _graph_formatter(view, context, model, name):
-        date_l = []
-        cpu_usage_l = []
-        disk_usage_l = []
-        for plan_stats in model.user_plan_stats:
-            date_l.append(plan_stats.date)
-            cpu_usage_l.append(plan_stats.cpu_usage)
-            disk_usage_l.append(plan_stats.disk_usage)
-
-        date_chart = pygal.Line(x_label_rotation=20)
-        date_chart.x_labels = map(lambda d: d.strftime('%Y-%m-%d'), date_l)
-        date_chart.add("Cpu_Usage", cpu_usage_l)
-        date_chart.add("Disk_Usage", disk_usage_l)
-
-        return Markup(date_chart.render(True))
-
-    def _time_remaining(view, context, model, name):
-        time_remaining = model.end_date - datetime.datetime.now()
-        return str(time_remaining.days) + " dias restantes"
-
-    column_formatters = {
-        'user_plan_stats': _graph_formatter,
-        'time_remaining': _time_remaining
-    }
+    def is_accessible(self):
+        """Prevent administration of ResourceRequests unless the currently
+        logged-in user has the "end-user" role.
+        """
+        return current_user.has_role('end-user')
 
 
 class PurchaseUser(UserModelView):
@@ -151,6 +119,12 @@ class CreditCardUser(UserModelView):
 
     def on_model_change(self, form, model, is_created):
         model.user_id = current_user.id
+
+    def is_accessible(self):
+        """Prevent administration of ResourceRequests unless the currently
+        logged-in user has the "end-user" role.
+        """
+        return current_user.has_role('end-user')
 
 
 class UserInfoUser(UserAdmin):
@@ -288,3 +262,5 @@ class ResourceRequestsUser(UserModelView):
             model.message_date = func.now()
         else:
             raise validators.ValidationError('A resposta não pode estar em branco!')
+
+
