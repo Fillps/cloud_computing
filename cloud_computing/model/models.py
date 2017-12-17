@@ -481,7 +481,7 @@ def server_gpu_before_delete(maper, connection, target):
     else:
         connection.execute(Server.__table__.update()
                            .where(Server.__table__.c.id == target.server_id)
-                           .values(gpu_slot_available=target.server.ram_slots_available + target.quantity))
+                           .values(gpu_slot_available=target.server.ram_slot_available + target.quantity))
         connection.execute(Gpu.__table__.update()
                            .where(Gpu.__table__.c.model == target.gpu_model)
                            .values(available=target.gpu.available + target.quantity))
