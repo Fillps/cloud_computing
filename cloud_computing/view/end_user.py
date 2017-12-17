@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import datetime
 import pygal
 from flask import flash, request
 from flask_admin import expose
@@ -35,15 +36,16 @@ class UserPlanView(UserModelView):
     can_edit = True
     can_view_details = True
     can_delete = False
-    column_list = ['id', 'plan', 'server', 'start_date', 'end_date', 'user_plan_stats']
-    column_details_list = ['id', 'plan', 'server', 'start_date', 'end_date', 'user_plan_stats']
+    column_list = ['id', 'plan', 'server', 'start_date', 'end_date', 'time_remaining', 'user_plan_stats']
+    column_details_list = ['id', 'plan', 'server', 'start_date', 'end_date', 'time_remaining', 'user_plan_stats']
 
     column_labels = dict(
         id='Id',
         plan='Plano',
         server='Servidor',
         start_date='Data de Início',
-        end_date='Data de Fim')
+        end_date='Data de Fim',
+        time_remaining='Tempo Restante')
 
     form_excluded_columns = ['id', 'plan', 'server', 'start_date', 'end_date',
                              'user', 'purchases', 'user_servers', 'user_plan_stats']
@@ -87,9 +89,15 @@ class UserPlanView(UserModelView):
 
         return Markup(date_chart.render(True))
 
+    def _time_remaining(view, context, model, name):
+        time_remaining = model.end_date - datetime.datetime.now()
+        return str(time_remaining.days) + " dias restantes"
+
     column_formatters = {
         'user_plan_stats': _graph_formatter,
+        'time_remaining': _time_remaining
     }
+
 
 class PurchaseUser(UserModelView):
     can_view_details = True
