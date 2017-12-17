@@ -62,7 +62,6 @@ class Plan(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.Text, unique=True, default='Customizado')
     price = db.Column(db.Float, default=0, nullable=False)
-    description = db.Column(db.Text)
     period = db.Column(db.Integer, nullable=False)
     cpu_model = db.Column(db.Text, db.ForeignKey('cpu.model'), nullable=False)
     os_name = db.Column(db.Text, db.ForeignKey('os.name'), nullable=False)
