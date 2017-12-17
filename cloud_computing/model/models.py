@@ -59,9 +59,10 @@ class User(db.Model, UserMixin):
 
 
 class Plan(db.Model):
-    id = db.Column(db.Integer(), primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.Text, unique=True, default='Customizado')
-    price = db.Column(db.Float(), nullable=False)
+    price = db.Column(db.Float, default=0, nullable=False)
+    description = db.Column(db.Text)
     period = db.Column(db.Integer, nullable=False)
     cpu_model = db.Column(db.Text, db.ForeignKey('cpu.model'), nullable=False)
     os_name = db.Column(db.Text, db.ForeignKey('os.name'), nullable=False)
@@ -70,6 +71,7 @@ class Plan(db.Model):
     thumbnail = db.Column(db.Text, default='http://placehold.it/700x400')
     hero_image = db.Column(db.Text, default='http://placehold.it/900x400')
     is_public = db.Column(db.Boolean, default='false')
+    auto_price = db.Column(db.Boolean, default=True)
 
     os = db.relationship('Os', backref=db.backref('plans'))
     cpu = db.relationship('Cpu', backref=db.backref('plans'))
@@ -86,13 +88,47 @@ class Plan(db.Model):
     def __str__(self):
         return self.title
 
+    @validates('auto_price')
+    def auto_price_update(self, key, value):
+        if value is True:
+            self.price = -1
+        return value
+
+    @validates('price')
+    def price_update(self, key, value):
+        if self.auto_price is True:
+            if self.cpu_model is not None:
+                return self.calculate_price()
+        return value
+
+    @validates('cpu')
+    def cpu_update(self, key, value):
+        if self.auto_price is True:
+            self.price = -1
+        return value
+
+    def calculate_price(self):
+        price = Cpu.query.filter_by(model=self.cpu_model).first().price * self.period
+        for plan_hd in PlanHd.query.filter_by(plan_id=self.id):
+            price += plan_hd.quantity * plan_hd.hd.price * self.period
+        for plan_ram in PlanRam.query.filter_by(plan_id=self.id):
+            price += plan_ram.quantity * plan_ram.ram.price * self.period
+        for plan_gpu in PlanGpu.query.filter_by(plan_id=self.id):
+            price += plan_gpu.quantity * plan_gpu.gpu.price * self.period
+        return price
+
 
 @event.listens_for(Plan, 'after_insert')
 def plan_after_insert(maper, connection, target):
+    values = {}
     if target.title == 'Customizado':
+        values['title'] = 'Customizado-' + str(target.id)
+    if target.auto_price is True:
+        values['price'] = target.calculate_price()
+    if values:
         connection.execute(Plan.__table__.update()
                            .where(Plan.__table__.c.id==target.id)
-                           .values(title='Customizado-' + str(target.id)))
+                           .values(**values))
 
 
 class ResourceRequests(db.Model):
@@ -174,29 +210,59 @@ class PlanResource:
                          primary_key=True)
 
     @declared_attr
-    def plans(self):
+    def plan(self):
         return db.relationship('Plan', backref=db.backref(self.backref_plan))
+
+    @validates('quantity')
+    def quantity_update(self, key, value):
+        if self.plan.auto_price is True:
+            self.plan.price = -1
+        return value
 
 
 class PlanGpu(db.Model, PlanResource):
     backref_plan = 'plan_gpus'
 
     gpu_model = db.Column(db.Text, db.ForeignKey('gpu.model'), primary_key=True)
-    gpus = db.relationship('Gpu', backref=db.backref('plan_gpus'))
+    gpu = db.relationship('Gpu', backref=db.backref('plan_gpu'))
 
 
 class PlanRam(db.Model, PlanResource):
     backref_plan = 'plan_rams'
 
     ram_model = db.Column(db.Text, db.ForeignKey('ram.model'), primary_key=True)
-    rams = db.relationship('Ram', backref=db.backref('plan_rams'))
+    ram = db.relationship('Ram', backref=db.backref('plan_ram'))
 
 
 class PlanHd(db.Model, PlanResource):
     backref_plan = 'plan_hds'
 
     hd_model = db.Column(db.Text, db.ForeignKey('hd.model'), primary_key=True)
-    hds = db.relationship('Hd', backref=db.backref('plan_hds'))
+    hd = db.relationship('Hd', backref=db.backref('plan_hd'))
+
+
+@event.listens_for(PlanGpu, 'after_insert')
+def gpu_plan_after_insert(maper, connection, target):
+    if target.plan.auto_price is True:
+        connection.execute(Plan.__table__.update()
+                           .where(Plan.__table__.c.id == target.plan_id)
+                           .values(price=target.plan.calculate_price()))
+
+
+@event.listens_for(PlanRam, 'after_insert')
+def ram_plan_after_insert(maper, connection, target):
+    if target.plan.auto_price is True:
+        connection.execute(Plan.__table__.update()
+                           .where(Plan.__table__.c.id == target.plan_id)
+                           .values(price=target.plan.calculate_price()))
+
+
+@event.listens_for(PlanHd, 'after_insert')
+def hd_plan_after_insert(maper, connection, target):
+    if target.plan.auto_price is True:
+        connection.execute(Plan.__table__.update()
+                           .where(Plan.__table__.c.id == target.plan_id)
+                           .values(price=target.plan.calculate_price()))
 
 
 class CreditCard(db.Model):

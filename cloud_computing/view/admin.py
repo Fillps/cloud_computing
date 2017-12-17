@@ -2,13 +2,14 @@
 
 from flask_admin.contrib import sqla
 from flask_admin.contrib.sqla import validators
+from flask_admin.model import InlineFormAdmin
 from flask_security import current_user, utils
 from markupsafe import Markup
 from sqlalchemy import func
 from wtforms import ValidationError, SelectField
 from wtforms.fields import PasswordField, IntegerField
 
-from cloud_computing.model.models import ResourceRequests
+from cloud_computing.model.models import ResourceRequests, PlanGpu, PlanRam, PlanHd
 from cloud_computing.utils.util import ReadonlyCKTextAreaField, CKTextAreaField, ReadOnlyIntegerField
 
 ADMIN_RESOURCES_REQUEST_MESSAGE_LENGTH = 100
@@ -89,13 +90,17 @@ class RoleAdmin(AdminView):
 
 
 class PlanAdmin(AdminView):
-    column_list = ['title', 'price', 'period', 'cpu', 'gpu', 'ram',
-                   'hd', 'os', 'is_public']
-    column_searchable_list = ['title', 'price', 'period', 'shop_description',
+
+    column_list = ['title', 'auto_price', 'price', 'period',
+                   'cpu', 'os', 'gpu', 'ram', 'hd', 'is_public']
+
+    column_searchable_list = ['title', 'auto_price', 'price', 'period', 'shop_description',
                               'is_public']
-    form_columns = ['title', 'price', 'period', 'cpu', 'gpu', 'ram',
+
+    form_columns = ['title', 'auto_price', 'price', 'period', 'cpu', 'gpu', 'ram',
                     'hd', 'os', 'shop_description', 'thumbnail',
                     'hero_image', 'is_public']
+
     column_labels = dict(
         title='Título',
         price='Preço',
@@ -105,7 +110,8 @@ class PlanAdmin(AdminView):
         rams='RAMs',
         hds='HDs',
         os='OS',
-        is_public='É Público?')
+        is_public='É Público?',
+        auto_price='Preço automático?')
 
 
 class ResourceRequestsAdmin(AdminView):
