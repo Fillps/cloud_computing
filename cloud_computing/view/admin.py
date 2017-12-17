@@ -9,7 +9,7 @@ from sqlalchemy import func
 from wtforms import ValidationError, SelectField
 from wtforms.fields import PasswordField, IntegerField
 
-from cloud_computing.model.models import ResourceRequests, PlanGpu, PlanRam, PlanHd
+from cloud_computing.model.models import ResourceRequests, PlanGpu, PlanRam, PlanHd, ServerGpu, ServerRam, ServerHd
 from cloud_computing.utils.util import ReadonlyCKTextAreaField, CKTextAreaField, ReadOnlyIntegerField
 
 ADMIN_RESOURCES_REQUEST_MESSAGE_LENGTH = 100
@@ -92,23 +92,26 @@ class RoleAdmin(AdminView):
 class PlanAdmin(AdminView):
 
     column_list = ['title', 'auto_price', 'price', 'period',
-                   'cpu', 'os', 'gpu', 'ram', 'hd', 'is_public']
+                   'cpu', 'os', 'plan_gpus', 'plan_rams', 'plan_hds', 'is_public']
 
     column_searchable_list = ['title', 'auto_price', 'price', 'period', 'shop_description',
                               'is_public']
 
-    form_columns = ['title', 'auto_price', 'price', 'period', 'cpu', 'gpu', 'ram',
-                    'hd', 'os', 'shop_description', 'thumbnail',
-                    'hero_image', 'is_public']
+    form_columns = ['title', 'auto_price', 'price', 'period', 'shop_description', 'thumbnail',
+                    'hero_image', 'is_public', 'cpu', 'os',]
+
+    inline_models = [(PlanGpu, dict(form_columns=['plan_id', 'gpu_model', 'gpu', 'quantity'])),
+                     (PlanRam, dict(form_columns=['plan_id', 'ram_model', 'ram', 'quantity'])),
+                     (PlanHd, dict(form_columns=['plan_id', 'hd_model', 'hd', 'quantity']))]
 
     column_labels = dict(
         title='Título',
         price='Preço',
         period='Período',
         cpu='CPU',
-        gpus='GPUs',
-        rams='RAMs',
-        hds='HDs',
+        plan_gpus='GPUs',
+        plan_rams='RAMs',
+        plan_hds='HDs',
         os='OS',
         is_public='É Público?',
         auto_price='Preço automático?')
@@ -272,52 +275,15 @@ class HdAdmin(ComponentAdmin):
     )
 
 
-# TODO All the editing of a server should be in one screen
 class ServerAdmin(AdminView):
     column_list = ['id', 'cpu', 'cores_available', 'gpu_slot_available', 'server_gpus', 'ram_slot_available', 'ram_max', 'ram_total',
                    'ram_available', 'hd_slot_available', 'hd_total', 'hd_available', 'ssd_total', 'ssd_available', 'os']
     form_columns = ['cpu', 'gpu_slot_total', 'ram_slot_total', 'ram_max', 'hd_slot_total', 'os']
 
-
-class ServerComponentAdmin(AdminView):
-    form_edit_rules = ['quantity', 'addOrRemove', 'add_quantity']
-    form_overrides = {
-        'quantity': ReadOnlyIntegerField
-    }
-
-    def bigger_than_zero(form, field):
-        if field.data <= 0:
-            raise ValidationError("Esse campo precisa ser maior que zero.")
-
-    form_args = dict(
-        add_quantity=dict(validators=[bigger_than_zero])
-    )
-
-    def scaffold_form(self):
-        """Overrides the scaffold_form function. Adds the add_quantity field to the form."""
-        form_class = super(ServerComponentAdmin, self).scaffold_form()
-
-        form_class.addOrRemove = SelectField("Selecione", choices=[(ADD_ID, 'Adicionar'), (REMOVE_ID, 'Remover')])
-        form_class.add_quantity = IntegerField('Quantidade')
-
-        return form_class
-
-    def on_model_change(self, form, model, is_created):
-        """Adds the add_quantity field to the model quantity."""
-        if form.addOrRemove.data == REMOVE_ID:
-            model.add_quantity = - model.add_quantity
-        model.quantity += model.add_quantity
+    inline_models = [(ServerGpu, dict(form_columns=['server_id', 'gpu_model', 'gpu', 'quantity'])),
+                     (ServerRam, dict(form_columns=['server_id', 'ram_model', 'ram', 'quantity'])),
+                     (ServerHd, dict(form_columns=['server_id', 'hd_model', 'hd', 'quantity']))]
 
 
-class ServerGpuAdmin(ServerComponentAdmin):
-    form_columns = ['server', 'gpu', 'quantity']
-
-
-class ServerRamAdmin(ServerComponentAdmin):
-    can_create = True
-
-
-class ServerHdAdmin(ServerComponentAdmin):
-    can_create = True
 
 

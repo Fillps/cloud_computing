@@ -225,6 +225,9 @@ class PlanGpu(db.Model, PlanResource):
     gpu_model = db.Column(db.Text, db.ForeignKey('gpu.model'), primary_key=True)
     gpu = db.relationship('Gpu', backref=db.backref('plan_gpu'))
 
+    def __str__(self):
+        return self.gpu.model + ' x ' + str(self.quantity)
+
 
 class PlanRam(db.Model, PlanResource):
     backref_plan = 'plan_rams'
@@ -232,12 +235,18 @@ class PlanRam(db.Model, PlanResource):
     ram_model = db.Column(db.Text, db.ForeignKey('ram.model'), primary_key=True)
     ram = db.relationship('Ram', backref=db.backref('plan_ram'))
 
+    def __str__(self):
+        return self.ram.model + ' x ' + str(self.quantity)
+
 
 class PlanHd(db.Model, PlanResource):
     backref_plan = 'plan_hds'
 
     hd_model = db.Column(db.Text, db.ForeignKey('hd.model'), primary_key=True)
     hd = db.relationship('Hd', backref=db.backref('plan_hd'))
+
+    def __str__(self):
+        return self.hd.model + ' x ' + str(self.quantity)
 
 
 @event.listens_for(PlanGpu, 'after_insert')
@@ -404,6 +413,9 @@ class ServerGpu(db.Model, ServerResource):
 
     gpu = db.relationship('Gpu', backref=db.backref(backref_plan))
 
+    def __str__(self):
+        return self.gpu.model + ' x ' + str(self.quantity)
+
     @validates('quantity')
     def update_quantity(self, key, value):
         """
@@ -412,7 +424,7 @@ class ServerGpu(db.Model, ServerResource):
         """
         if value < 0:
             raise ValidationError('A quantidade precisa ser maior que zero.')
-        elif self.server_id is None:
+        elif self.quantity is None:
             return value
         elif self.gpu.available < value - self.quantity:
             raise ValidationError(
@@ -421,7 +433,7 @@ class ServerGpu(db.Model, ServerResource):
             raise ValidationError(
                 "Não existem slots diponíveis. Tente diminuir a quantidade de recursos.")
 
-        net_capacity = self.gpu.ram * value - self.gpu.ram * self.quantity
+        net_capacity = self.gpu.ram * (value - self.quantity)
 
         if self.available_capacity + net_capacity < 0:
             raise ValidationError(
@@ -481,6 +493,9 @@ class ServerRam(db.Model, ServerResource):
     ram_model = db.Column(db.Text, db.ForeignKey('ram.model'), primary_key=True)
     ram = db.relationship('Ram', backref=db.backref(backref_plan))
 
+    def __str__(self):
+        return self.ram.model + ' x ' + str(self.quantity)
+
     @validates('quantity')
     def update_quantity(self, key, value):
         """
@@ -489,7 +504,7 @@ class ServerRam(db.Model, ServerResource):
         """
         if value < 0:
             raise ValidationError('A quantidade precisa ser maior que zero.')
-        elif self.server_id is None:
+        elif self.quantity is None:
             return value
         elif self.ram.available < value - self.quantity:
             raise ValidationError(
@@ -566,6 +581,9 @@ class ServerHd(db.Model, ServerResource):
     hd_model = db.Column(db.Text, db.ForeignKey('hd.model'), primary_key=True)
     hd = db.relationship('Hd', backref=db.backref(backref_plan))
 
+    def __str__(self):
+        return self.hd.model + ' x ' + str(self.quantity)
+
     @validates('quantity')
     def update_quantity(self, key, value):
         """
@@ -574,7 +592,7 @@ class ServerHd(db.Model, ServerResource):
         """
         if value < 0:
             raise ValidationError('A quantidade precisa ser maior que zero.')
-        elif self.server_id is None:
+        elif self.quantity is None:
             return value
         elif self.hd.available < value - self.quantity:
             raise ValidationError(
@@ -622,10 +640,10 @@ def server_hd_before_insert(maper, connection, target):
         else:
             server_values = {'hd_available': target.server.hd_available + added_capacity,
                              'hd_total': target.server.hd_available + added_capacity}
+        server_values['hd_slot_available'] = target.server.hd_slot_available - target.quantity
         connection.execute(Server.__table__.update()
                            .where(Server.__table__.c.id == target.server_id)
-                           .values(**server_values,
-                                   hd_slot_available=target.server.hd_slot_available - target.quantity))
+                           .values(**server_values))
         connection.execute(Hd.__table__.update()
                            .where(Hd.__table__.c.model == target.hd_model)
                            .values(available=target.hd.available - target.quantity))
@@ -676,9 +694,6 @@ def purchase_after_insert(maper, connection, target):
     connection.execute(Purchase.__table__.update()
                        .where(Purchase.__table__.c.id==target.first_purchase_id)
                        .values(user_plan_id=target.id))
-    # @event.listens_for(Session, "after_flush", once=True)
-    # def receive_after_flush(session, context):
-    #     db.session.add(PlanPurchase(user_plan_id=target.id, purchase_id=target.first_purchase_id))
 
 
 class UserPlanStats(db.Model):

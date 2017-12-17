@@ -88,24 +88,7 @@ class AppFactory:
         admin.add_view(_adm.ServerAdmin(
             models.Server,
             db.session,
-            category='Servidores'))
-
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore',
-                                    'Fields missing from ruleset',
-                                    UserWarning)
-            admin.add_view(_adm.ServerGpuAdmin(
-                models.ServerGpu,
-                db.session,
-                category='Servidores'))
-            admin.add_view(_adm.ServerRamAdmin(
-                models.ServerRam,
-                db.session,
-                category='Servidores'))
-            admin.add_view(_adm.ServerHdAdmin(
-                models.ServerHd,
-                db.session,
-                category='Servidores'))
+            name='Servidores'))
 
         admin.add_view(_user.UserPlanView(
             models.UserPlan,
