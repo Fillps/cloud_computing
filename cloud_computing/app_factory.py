@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import warnings
 from flask import Flask
-from flask import app
 from flask_admin import Admin
 from flask_heroku import Heroku
 from flask_security import Security
@@ -15,6 +15,7 @@ from cloud_computing.utils import db_utils
 from cloud_computing.view.register import ExtendedRegisterForm
 from cloud_computing.view.view import default_blueprint
 
+
 class AppFactory:
     """Builds the app."""
     def __init__(self, config_filename='../configs/production.py'):
@@ -22,7 +23,7 @@ class AppFactory:
 
         Heroku(self.app)
         self.app.config.from_pyfile(config_filename)
-        
+
         # Cria o tradutor
         babel = Babel(self.app)
 
@@ -37,7 +38,7 @@ class AppFactory:
             role = user_datastore.find_or_create_role('end-user')
             user_datastore.add_role_to_user(user, role)
             db.session.commit()
-        
+
         # Função que define a língua
         @babel.localeselector
         def get_locale():
@@ -61,19 +62,19 @@ class AppFactory:
         admin.add_view(_adm.ResourceRequestsAdmin(
             models.ResourceRequests,
             db.session,
-            endpoint='resource-requests-admin', 
+            endpoint='resource-requests-admin',
             name='Requisições'))
         admin.add_view(_adm.CpuAdmin(models.Cpu, db.session,
-                                     category='Componentes', 
+                                     category='Componentes',
                                      name='CPUs'))
         admin.add_view(_adm.GpuAdmin(models.Gpu, db.session,
-                                     category='Componentes', 
+                                     category='Componentes',
                                      name='GPUs'))
         admin.add_view(_adm.RamAdmin(models.Ram, db.session,
-                                     category='Componentes', 
+                                     category='Componentes',
                                      name='Memórias RAM'))
         admin.add_view(_adm.HdAdmin(models.Hd, db.session,
-                                    category='Componentes', 
+                                    category='Componentes',
                                     name='HDs'))
 
         admin.add_view(_user.CreditCardUser(models.CreditCard, db.session, name='Cartões de Crédito'))
@@ -81,8 +82,26 @@ class AppFactory:
         admin.add_view(_user.ResourceRequestsUser(
             models.ResourceRequests,
             db.session,
-            endpoint='resource-requests-user', 
+            endpoint='resource-requests-user',
             name='Requisitar Recurso'))
+        admin.add_view(_adm.ServerAdmin(
+            models.Server,
+            db.session,
+            category='Servidores'))
+
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore',
+                                    'Fields missing from ruleset',
+                                    UserWarning)
+            admin.add_view(_adm.ServerGpuAdmin(models.ServerGpu,
+                                               db.session,
+                                               category='Servidores'))
+            admin.add_view(_adm.ServerRamAdmin(models.ServerRam,
+                                               db.session,
+                                               category='Servidores'))
+            admin.add_view(_adm.ServerHdAdmin(models.ServerHd,
+                                              db.session,
+                                              category='Servidores'))
 
     def __config_database_and_security(self):
         db.init_app(self.app)
