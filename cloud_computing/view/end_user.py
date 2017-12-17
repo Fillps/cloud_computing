@@ -19,6 +19,7 @@ USER_RESOURCES_REQUEST_MESSAGE_LENGTH = 50
 
 
 class UserModelView(sqla.ModelView):
+
     def is_accessible(self):
         """Prevent administration of ResourceRequests unless the currently
         logged-in user has the "end-user" role.
@@ -31,6 +32,7 @@ class PurchaseUser(UserModelView):
     can_edit = False
     can_create = False
     column_list = ['id', 'plans', 'credit_cards']
+    column_labels = dict(id='Id', plans='Planos', credit_cards='Cartões de Crédito')
 
     def get_count_query(self):
         """Count of the requests with the user_id equal to the current user."""
@@ -44,6 +46,7 @@ class PurchaseUser(UserModelView):
 class CreditCardUser(UserModelView):
     column_list = ['number', 'name', 'exp_date']
     form_columns = ['number', 'name', 'exp_date', 'cvv']
+    column_labels = dict(number='Número', name='Nome', exp_date='Data de Vencimento', cvv='CVV')
 
     def _number_formatter(view, context, model, name):
         """Format the card number to show only the last 4 digits."""
@@ -76,6 +79,12 @@ class ResourceRequestsUser(UserModelView):
     column_searchable_list = ['id', 'message_date', 'message', 'answer_date', 'answer']
     column_details_list = ['id', 'message_date', 'message', 'admin_rel', 'answer_date', 'answer']
     form_excluded_columns = ['message_date', 'answer_date', 'answer', 'id', 'admin_rel', 'user_rel']
+    column_labels = dict(
+        id='id',
+        message_date='Data da Mensagem',
+        admin_rel='Administrador',
+        answer_date='Data da Resposta',
+        answer='Resposta')
 
     # CKeditor - Text editor for the answer
     extra_js = ['//cdn.ckeditor.com/4.6.0/standard/ckeditor.js']
@@ -142,7 +151,7 @@ class ResourceRequestsUser(UserModelView):
         request_model = self.get_one(request_id)
 
         if request_model is None:
-            flash(gettext('Record does not exist.'), 'error')
+            flash(gettext('O registro não existe.'), 'erro')
             return redirect(return_url)
 
         if self.details_modal and request.args.get('modal'):
@@ -172,4 +181,4 @@ class ResourceRequestsUser(UserModelView):
             model.user_id = current_user.id
             model.message_date = func.now()
         else:
-            raise validators.ValidationError('Answer cannot be empty!')
+            raise validators.ValidationError('A resposta não pode estar em branco!')

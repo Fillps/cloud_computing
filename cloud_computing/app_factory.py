@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
-import warnings
 
+import warnings
 from flask import Flask
 from flask_admin import Admin
 from flask_heroku import Heroku
 from flask_security import Security
 from flask_security import user_registered
+from flask_babelex import Babel
 
 from cloud_computing.model.database import db, user_datastore
 from cloud_computing.model import models
@@ -23,6 +24,9 @@ class AppFactory:
         Heroku(self.app)
         self.app.config.from_pyfile(config_filename)
 
+        # Cria o tradutor
+        babel = Babel(self.app)
+
         self.__config_database_and_security()
         self.__config_flask_admin()
         self.__config_blueprints()
@@ -35,34 +39,51 @@ class AppFactory:
             user_datastore.add_role_to_user(user, role)
             db.session.commit()
 
+        # Função que define a língua
+        @babel.localeselector
+        def get_locale():
+            return 'pt_BR'
+
     def get_app(self):
         return self.app
 
     def __config_flask_admin(self):
         admin = Admin(
             self.app,
-            'Management',
+            'Gerenciamento',
             base_template='admin.html',
             template_mode='bootstrap3',
             url='/manage'
         )
 
-        admin.add_view(_adm.UserAdmin(models.User, db.session))
-        admin.add_view(_adm.RoleAdmin(models.Role, db.session))
-        admin.add_view(_adm.PlanAdmin(models.Plan, db.session))
+        admin.add_view(_adm.UserAdmin(models.User, db.session, name='Usuários'))
+        admin.add_view(_adm.RoleAdmin(models.Role, db.session, name='Papéis'))
+        admin.add_view(_adm.PlanAdmin(models.Plan, db.session, name='Planos'))
         admin.add_view(_adm.ResourceRequestsAdmin(
             models.ResourceRequests,
             db.session,
-            endpoint='resource-requests-admin'))
+            endpoint='resource-requests-admin',
+            name='Requisições'))
         admin.add_view(_adm.CpuAdmin(models.Cpu, db.session,
-                                     category='Componentes'))
+                                     category='Componentes',
+                                     name='CPUs'))
         admin.add_view(_adm.GpuAdmin(models.Gpu, db.session,
-                                     category='Componentes'))
+                                     category='Componentes',
+                                     name='GPUs'))
         admin.add_view(_adm.RamAdmin(models.Ram, db.session,
-                                     category='Componentes'))
+                                     category='Componentes',
+                                     name='Memórias RAM'))
         admin.add_view(_adm.HdAdmin(models.Hd, db.session,
-                                    category='Componentes'))
+                                    category='Componentes',
+                                    name='HDs'))
 
+        admin.add_view(_user.CreditCardUser(models.CreditCard, db.session, name='Cartões de Crédito'))
+        admin.add_view(_user.PurchaseUser(models.Purchase, db.session, name='Compras'))
+        admin.add_view(_user.ResourceRequestsUser(
+            models.ResourceRequests,
+            db.session,
+            endpoint='resource-requests-user',
+            name='Requisitar Recurso'))
         admin.add_view(_adm.ServerAdmin(
             models.Server,
             db.session,
@@ -73,21 +94,14 @@ class AppFactory:
                                     'Fields missing from ruleset',
                                     UserWarning)
             admin.add_view(_adm.ServerGpuAdmin(models.ServerGpu,
-                                          db.session,
-                                          category='Servidores'))
+                                               db.session,
+                                               category='Servidores'))
             admin.add_view(_adm.ServerRamAdmin(models.ServerRam,
-                                          db.session,
-                                          category='Servidores'))
+                                               db.session,
+                                               category='Servidores'))
             admin.add_view(_adm.ServerHdAdmin(models.ServerHd,
-                                         db.session,
-                                         category='Servidores'))
-
-        admin.add_view(_user.CreditCardUser(models.CreditCard, db.session))
-        admin.add_view(_user.PurchaseUser(models.Purchase, db.session))
-        admin.add_view(_user.ResourceRequestsUser(
-            models.ResourceRequests,
-            db.session,
-            endpoint='resource-requests-user'))
+                                              db.session,
+                                              category='Servidores'))
 
     def __config_database_and_security(self):
         db.init_app(self.app)

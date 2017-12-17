@@ -4,7 +4,7 @@ from slugify import slugify
 from flask_security import RoleMixin, UserMixin
 from sqlalchemy import func, event
 from sqlalchemy.ext.declarative import declared_attr
-from sqlalchemy.orm import validates, mapper
+from sqlalchemy.orm import validates
 from wtforms import ValidationError
 
 from cloud_computing.model.database import db
