@@ -13,13 +13,12 @@ from sqlalchemy import func
 from werkzeug.utils import redirect
 
 from cloud_computing.model.models import ResourceRequests, CreditCard, Purchase
-from cloud_computing.utils.util import CKTextAreaField
+from cloud_computing.utils.form_utils import CKTextAreaField
 
 USER_RESOURCES_REQUEST_MESSAGE_LENGTH = 50
 
 
 class UserModelView(sqla.ModelView):
-
     def is_accessible(self):
         """Prevent administration of ResourceRequests unless the currently
         logged-in user has the "end-user" role.
@@ -70,7 +69,7 @@ class CreditCardUser(UserModelView):
 
 
 class ResourceRequestsUser(UserModelView):
-    # User can create, view and delete requests, but cannot edit them.
+    # User can create, view and delete requests, but cannot edit them
     can_delete = True
     can_edit = False
     can_view_details = True

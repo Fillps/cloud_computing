@@ -3,7 +3,7 @@
 from cloud_computing.model.models import Plan
 
 
-class Controller(object):
+class Controller:
     """Initial implementation of the controller class."""
     @staticmethod
     def get_plans():
