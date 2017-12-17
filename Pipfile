@@ -17,6 +17,7 @@ flask-heroku = "*"
 psycopg2 = "*"
 gunicorn = "*"
 python-slugify = "*"
+pygal = "*"
 
 [dev-packages]
 

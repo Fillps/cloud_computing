@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+import pygal
 from flask import flash, request
 from flask_admin import expose
 from flask_admin.babel import gettext
@@ -32,9 +32,11 @@ class UserModelView(sqla.ModelView):
 
 class UserPlanView(UserModelView):
     can_create = False
+    can_edit = True
     can_view_details = True
     can_delete = False
-    column_list = ['id', 'plan', 'server', 'start_date', 'end_date']
+    column_list = ['id', 'plan', 'server', 'start_date', 'end_date', 'user_plan_stats']
+    column_details_list = ['id', 'plan', 'server', 'start_date', 'end_date', 'user_plan_stats']
 
     column_labels = dict(
         id='Id',
@@ -69,6 +71,25 @@ class UserPlanView(UserModelView):
         """Select only the requests with the user_id equal to the current user."""
         return super(UserPlanView, self).get_query().filter(UserPlan.user_id == current_user.id)
 
+    def _graph_formatter(view, context, model, name):
+        date_l = []
+        cpu_usage_l = []
+        disk_usage_l = []
+        for plan_stats in model.user_plan_stats:
+            date_l.append(plan_stats.date)
+            cpu_usage_l.append(plan_stats.cpu_usage)
+            disk_usage_l.append(plan_stats.disk_usage)
+
+        date_chart = pygal.Line(x_label_rotation=20)
+        date_chart.x_labels = map(lambda d: d.strftime('%Y-%m-%d'), date_l)
+        date_chart.add("Cpu_Usage", cpu_usage_l)
+        date_chart.add("Disk_Usage", disk_usage_l)
+
+        return Markup(date_chart.render(True))
+
+    column_formatters = {
+        'user_plan_stats': _graph_formatter,
+    }
 
 class PurchaseUser(UserModelView):
     can_view_details = True

@@ -130,6 +130,9 @@ class AppFactory:
             db.session,
             category='Conta',
             name='Compras'))
+        admin.add_view(_user.UserModelView(
+            models.UserPlanStats,
+            db.session))
 
     def __config_database_and_security(self):
         db.init_app(self.app)

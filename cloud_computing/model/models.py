@@ -608,10 +608,10 @@ def server_hd_before_insert(maper, connection, target):
         else:
             server_values = {'hd_available': target.server.hd_available + added_capacity,
                              'hd_total': target.server.hd_available + added_capacity}
+        server_values['hd_slot_available'] = target.server.hd_slot_available - target.quantity
         connection.execute(Server.__table__.update()
                            .where(Server.__table__.c.id == target.server_id)
-                           .values(**server_values,
-                                   hd_slot_available=target.server.hd_slot_available - target.quantity))
+                           .values(**server_values))
         connection.execute(Hd.__table__.update()
                            .where(Hd.__table__.c.model == target.hd_model)
                            .values(available=target.hd.available - target.quantity))
@@ -633,11 +633,10 @@ def server_hd_before_delete(maper, connection, target):
         else:
             server_values = {'hd_available': target.server.hd_available - removed_capacity,
                              'hd_total': target.server.hd_available - removed_capacity}
-
+        server_values['hd_slot_available'] = target.server.hd_slot_available - target.quantity
         connection.execute(Server.__table__.update()
                            .where(Server.__table__.c.id == target.server_id)
-                           .values(**server_values,
-                                   hd_slot_available=target.server.hd_slot_available + target.quantity))
+                           .values(**server_values))
         connection.execute(Hd.__table__.update()
                            .where(Hd.__table__.c.model == target.hd_model)
                            .values(available=target.hd.available + target.quantity))
