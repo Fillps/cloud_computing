@@ -661,9 +661,6 @@ def purchase_after_insert(maper, connection, target):
     connection.execute(Purchase.__table__.update()
                        .where(Purchase.__table__.c.id==target.first_purchase_id)
                        .values(user_plan_id=target.id))
-    # @event.listens_for(Session, "after_flush", once=True)
-    # def receive_after_flush(session, context):
-    #     db.session.add(PlanPurchase(user_plan_id=target.id, purchase_id=target.first_purchase_id))
 
 
 class UserPlanStats(db.Model):
