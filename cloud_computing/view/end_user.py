@@ -70,14 +70,28 @@ class PurchaseUser(UserModelView):
     can_create = True
     can_delete = False
 
-    column_list = ['id', 'plan', 'user_plan', 'credit_card', 'plan.price', 'date']
+    column_list = ['id', 'plan', 'user_plan', 'credit_card', 'price', 'date']
     column_labels = dict(
         id='Id',
         plan='Plano',
         credit_card='Cartão de Crédito',
         date='Data',
-        user_plan='Contratação')
+        user_plan='Contratação',
+        price='Preço')
     form_columns = ['plan', 'credit_card']
+
+    def _price_formatter(view, context, model, name):
+        return model.plan.price
+
+    def _date_formatter(view, context, model, name):
+        if model.date is not None:
+            return model.date.strftime('%d/%m/%Y %H:%M:%S')
+        return model.date
+
+    column_formatters = {
+        'price': _price_formatter,
+        'date': _date_formatter
+    }
 
     def get_count_query(self):
         """Count of the requests with the user_id equal to the current user."""
@@ -132,6 +146,7 @@ class CreditCardUser(UserModelView):
 class UserInfoUser(UserAdmin):
     can_create = False
     form_columns = ['name', 'last_name', 'email', 'cpf', 'cnpj', 'company']
+    column_exclude_list = ['roles']
 
     def get_count_query(self):
         """Count of the requests with the user_id equal to the current user."""
