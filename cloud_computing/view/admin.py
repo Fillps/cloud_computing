@@ -100,7 +100,6 @@ class RoleAdmin(AdminView):
 
 
 class PlanAdmin(AdminView):
-
     column_list = ['title', 'auto_price', 'price', 'duration_months',
                    'cpu', 'os', 'gpu', 'ram', 'hd', 'is_public']
     column_searchable_list = ['title', 'auto_price', 'duration_months', 'duration_months', 'shop_description',
@@ -387,5 +386,3 @@ class UserPlanAdmin(AdminView):
         'start_date': _start_date_formatter,
         'end_date': _end_date_formatter
     }
-
-

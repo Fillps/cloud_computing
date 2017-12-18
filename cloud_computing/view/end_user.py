@@ -262,5 +262,3 @@ class ResourceRequestsUser(UserModelView):
             model.message_date = func.now()
         else:
             raise validators.ValidationError('A resposta não pode estar em branco!')
-
-
