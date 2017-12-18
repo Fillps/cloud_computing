@@ -18,18 +18,30 @@ class Controller:
 
     @staticmethod
     def get_plan_gpu_list(plan_id):
-        """Queries the database for the gpus related to the plan_id."""
-        return Gpu.query.join(PlanGpu, Gpu.model == PlanGpu.gpu_model)\
-            .filter(plan_id == PlanGpu.plan_id)
+        """Queries the database for the gpus related to the plan_id.
+
+        Returns a list of pairs of Gpu objects with the quantity in
+        their relationship table.
+        """
+        return Gpu.query.join(PlanGpu, Gpu.model == PlanGpu.gpu_model) \
+            .add_columns(PlanGpu.quantity).filter(plan_id == PlanGpu.plan_id)
 
     @staticmethod
     def get_plan_ram_list(plan_id):
-        """Queries the database for the ram memories related to the plan_id."""
-        return Ram.query.join(PlanRam, Ram.model == PlanRam.ram_model)\
-            .filter(plan_id == PlanRam.plan_id)
+        """Queries the database for the ram memories related to the plan_id.
+
+        Returns a list of pairs of Ram objects with the quantity in
+        their relationship table.
+        """
+        return Ram.query.join(PlanRam, Ram.model == PlanRam.ram_model) \
+            .add_columns(PlanRam.quantity).filter(plan_id == PlanRam.plan_id)
 
     @staticmethod
     def get_plan_hd_list(plan_id):
-        """Queries the database for the hds related to the plan_id."""
-        return Hd.query.join(PlanHd, Hd.model == PlanHd.hd_model)\
-            .filter(plan_id == PlanHd.plan_id)
+        """Queries the database for the hds related to the plan_id.
+
+        Returns a list of pairs of Hd objects with the quantity in
+        their relationship table.
+        """
+        return Hd.query.join(PlanHd, Hd.model == PlanHd.hd_model) \
+            .add_columns(PlanHd.quantity).filter(plan_id == PlanHd.plan_id)

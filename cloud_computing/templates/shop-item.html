@@ -48,12 +48,13 @@
 
                     <li>GPUs:</li>
                     <ul>
-                      {% for gpu in gpu_list %}
+                      {% for pair in gpu_list %}
 
-                      <li>Modelo: {{ gpu.model }}</li>
+                      <li>Modelo: {{ pair.Gpu.model }}</li>
                       <ul>
-                        <li>Frequência: {{ gpu.frequency }} GHz</li>
-                        <li>Memória dedicada: {{ gpu.ram }} GB</li>
+                        <li>Frequência: {{ pair.Gpu.frequency }} GHz</li>
+                        <li>Memória dedicada: {{ pair.Gpu.ram }} GB</li>
+                        <li>Unidades: {{ pair.quantity }}</li>
                       </ul>
 
                       {% endfor %}
@@ -65,11 +66,12 @@
 
                     <li>Memórias RAM:</li>
                     <ul>
-                      {% for ram in ram_list %}
+                      {% for pair in ram_list %}
 
-                      <li>Modelo: {{ ram.model }}</li>
+                      <li>Modelo: {{ pair.Ram.model }}</li>
                       <ul>
-                        <li>Capacidade: {{ ram.capacity }} GB</li>
+                        <li>Capacidade: {{ pair.Ram.capacity }} GB</li>
+                        <li>Unidades: {{ pair.quantity }}</li>
                       </ul>
 
                       {% endfor %}
@@ -81,12 +83,13 @@
 
                     <li>HDs:</li>
                     <ul>
-                      {% for hd in hd_list %}
+                      {% for pair in hd_list %}
 
-                      <li>Modelo: {{ hd.model }}</li>
+                      <li>Modelo: {{ pair.Hd.model }}</li>
                       <ul>
-                        <li>Capacidade: {{ hd.capacity }} GB</li>
-                        <li>SSD: {% if hd.is_ssd %} Sim {% else %} Não {% endif %}</li>
+                        <li>Capacidade: {{ pair.Hd.capacity }} GB</li>
+                        <li>SSD: {% if pair.Hd.is_ssd %} Sim {% else %} Não {% endif %}</li>
+                        <li>Unidades: {{ pair.quantity }}</li>
                       </ul>
 
                       {% endfor %}
