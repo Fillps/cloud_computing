@@ -14,7 +14,6 @@ from werkzeug.utils import redirect
 from wtforms import BooleanField
 
 from cloud_computing.model.models import ResourceRequests, CreditCard, Purchase, UserPlan, User
-
 from cloud_computing.utils.form_utils import CKTextAreaField
 from cloud_computing.view.admin import UserAdmin, UserPlanAdmin
 
@@ -31,9 +30,7 @@ class UserModelView(sqla.ModelView):
 
 
 class UserPlanView(UserPlanAdmin):
-
     can_edit = True
-
     form_excluded_columns = ['id', 'plan', 'server', 'start_date', 'end_date',
                              'user', 'purchases', 'user_servers', 'user_plan_stats']
 
@@ -80,7 +77,6 @@ class PurchaseUser(UserModelView):
         credit_card='Cartão de Crédito',
         date='Data',
         user_plan='Contratação')
-
     form_columns = ['plan', 'credit_card']
 
     def get_count_query(self):
@@ -134,9 +130,7 @@ class CreditCardUser(UserModelView):
 
 
 class UserInfoUser(UserAdmin):
-
     can_create = False
-
     form_columns = ['name', 'last_name', 'email', 'cpf', 'cnpj', 'company']
 
     def get_count_query(self):

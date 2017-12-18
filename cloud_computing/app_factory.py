@@ -104,12 +104,13 @@ class AppFactory:
                 models.ServerHd,
                 db.session,
                 category='Servidores'))
+
         admin.add_view(_adm.UserPlanAdmin(
                 models.UserPlan,
                 db.session,
-                name='Contratações',
-                endpoint='user-plan-admin'
-        ))
+                name='Uso de Recursos',
+                endpoint='user-plan-admin',
+                category='Servidores'))
 
         admin.add_view(_user.UserPlanView(
             models.UserPlan,

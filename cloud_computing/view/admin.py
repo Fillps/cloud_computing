@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import datetime
-
 import pygal
 from flask_admin.contrib import sqla
 from flask_admin.contrib.sqla import validators
@@ -104,14 +103,11 @@ class PlanAdmin(AdminView):
 
     column_list = ['title', 'auto_price', 'price', 'duration_months',
                    'cpu', 'os', 'gpu', 'ram', 'hd', 'is_public']
-
     column_searchable_list = ['title', 'auto_price', 'duration_months', 'duration_months', 'shop_description',
                               'is_public']
-
     form_columns = ['title', 'auto_price', 'price', 'duration_months', 'cpu', 'gpu', 'ram',
                     'hd', 'os', 'shop_description', 'thumbnail',
                     'hero_image', 'is_public']
-
     column_labels = dict(
         title='Título',
         price='Preço',
@@ -160,7 +156,6 @@ class ResourceRequestsAdmin(AdminView):
     column_formatters = {
         'message': _message_formatter,
         'message_date': _message_date_formatter
-
     }
 
     def get_count_query(self):
@@ -228,14 +223,17 @@ class CpuAdmin(ComponentAdmin):
     column_list = ['model', 'cores', 'frequency', 'price', 'total', 'available']
     form_columns = ['model', 'cores', 'frequency', 'price', 'available']
     column_searchable_list = column_list
-    column_labels = dict(model='Modelo', cores='Nº de Núcleos', frequency='Frequência',
-                         price='Preço', total='Total', available='Disponíveis')
-
+    column_labels = dict(
+        model='Modelo',
+        cores='Nº de Núcleos',
+        frequency='Frequência',
+        price='Preço',
+        total='Total',
+        available='Disponíveis')
     form_args = dict(
         cores=dict(validators=[ComponentAdmin.bigger_than_zero]),
         frequency=dict(validators=[ComponentAdmin.bigger_than_zero]),
-        price=dict(validators=[ComponentAdmin.bigger_than_zero])
-    )
+        price=dict(validators=[ComponentAdmin.bigger_than_zero]))
 
 
 class GpuAdmin(ComponentAdmin):
@@ -249,12 +247,10 @@ class GpuAdmin(ComponentAdmin):
         price='Preço',
         total='Total',
         available='Disponíveis')
-
     form_args = dict(
         ram=dict(validators=[ComponentAdmin.bigger_than_zero]),
         frequency=dict(validators=[ComponentAdmin.bigger_than_zero]),
-        price=dict(validators=[ComponentAdmin.bigger_than_zero])
-    )
+        price=dict(validators=[ComponentAdmin.bigger_than_zero]))
 
 
 class RamAdmin(ComponentAdmin):
@@ -278,13 +274,16 @@ class HdAdmin(ComponentAdmin):
     column_list = ['model', 'capacity', 'is_ssd', 'price', 'total', 'available']
     form_columns = ['model', 'capacity', 'is_ssd', 'price', 'available']
     column_searchable_list = column_list
-    column_labels = dict(model='Modelo', capacity='Capacidade', is_ssd='SSD', price='Preço',
-                         total='Total', available='Disponíveis')
-
+    column_labels = dict(
+        model='Modelo',
+        capacity='Capacidade',
+        is_ssd='SSD',
+        price='Preço',
+        total='Total',
+        available='Disponíveis')
     form_args = dict(
         capacity=dict(validators=[ComponentAdmin.bigger_than_zero]),
-        price=dict(validators=[ComponentAdmin.bigger_than_zero])
-    )
+        price=dict(validators=[ComponentAdmin.bigger_than_zero]))
 
 
 # TODO All the editing of a server should be in one screen
@@ -305,8 +304,7 @@ class ServerComponentAdmin(AdminView):
             raise ValidationError("Esse campo precisa ser maior que zero.")
 
     form_args = dict(
-        add_quantity=dict(validators=[bigger_than_zero])
-    )
+        add_quantity=dict(validators=[bigger_than_zero]))
 
     def scaffold_form(self):
         """Overrides the scaffold_form function. Adds the add_quantity field to the form."""
@@ -337,7 +335,6 @@ class ServerHdAdmin(ServerComponentAdmin):
 
 
 class UserPlanAdmin(AdminView):
-
     can_create = False
     can_edit = False
     can_view_details = True

@@ -9,10 +9,10 @@ from wtforms import ValidationError
 from sqlalchemy.orm import validates, Session
 
 from cloud_computing.model.database import db
-
-# Create a table to support many-to-many relationship between Users and Roles
 from cloud_computing.utils.form_utils import add_months
 
+
+# Create a table to support many-to-many relationship between Users and Roles
 roles_users = db.Table(
     'roles_users',
     db.Column('user_id', db.Integer(), db.ForeignKey('user.id')),
