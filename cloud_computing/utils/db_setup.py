@@ -136,9 +136,12 @@ def setup_development_data(app):
 
         db.session.commit()
 
-        basic_plan_description = "Descrição do plano básico"
-        middle_plan_description = "Descrição do plano intermediário"
-        advanced_plan_description = "Descrição do plano avançado"
+        basic_plan_description = "Plano básico constituído de uma máquina " + \
+            "com processador dual core disponível por um mês."
+        middle_plan_description = "Plano intermediário constituído de uma " + \
+            "máquina com processador dual core disponível por dois meses."
+        advanced_plan_description = "Plano avançado constituído de uma " + \
+            "máquina com processador quad core disponível por dois meses."
 
         get_or_create(db.session, Plan,
                       title='Plano básico',
