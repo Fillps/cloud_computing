@@ -11,9 +11,12 @@ from flask_security import current_user
 from markupsafe import Markup
 from sqlalchemy import func
 from werkzeug.utils import redirect
+from wtforms import BooleanField
 
-from cloud_computing.model.models import ResourceRequests, CreditCard, Purchase
+from cloud_computing.model.models import ResourceRequests, CreditCard, Purchase, UserPlan, User
 from cloud_computing.utils.form_utils import CKTextAreaField
+from cloud_computing.view.admin import UserAdmin, UserPlanAdmin
+
 
 USER_RESOURCES_REQUEST_MESSAGE_LENGTH = 50
 
@@ -26,12 +29,69 @@ class UserModelView(sqla.ModelView):
         return current_user.has_role('end-user')
 
 
+class UserPlanView(UserPlanAdmin):
+    can_edit = True
+    form_excluded_columns = ['id', 'plan', 'server', 'start_date', 'end_date',
+                             'user', 'purchases', 'user_servers', 'user_plan_stats']
+
+    def scaffold_form(self):
+        """Overrides the scaffold_form function. Adds the quantity field to the form."""
+        form_class = super(UserPlanView, self).scaffold_form()
+
+        form_class.renew = BooleanField('Deseja renovar o plano?')
+
+        return form_class
+
+    def on_model_change(self, form, model, is_created):
+        if form.renew.data is True:
+            self.session.add(Purchase(user=current_user,
+                                      credit_card=current_user.credit_cards[0],
+                                      plan=model.plan,
+                                      user_plan=model))
+
+    def get_count_query(self):
+        """Count of the requests with the user_id equal to the current user."""
+        return self.session.query(func.count(UserPlan.id)).filter(UserPlan.user_id == current_user.id)
+
+    def get_query(self):
+        """Select only the requests with the user_id equal to the current user."""
+        return super(UserPlanView, self).get_query().filter(UserPlan.user_id == current_user.id)
+
+    def is_accessible(self):
+        """Prevent administration of ResourceRequests unless the currently
+        logged-in user has the "end-user" role.
+        """
+        return current_user.has_role('end-user')
+
+
 class PurchaseUser(UserModelView):
     can_view_details = True
     can_edit = False
-    can_create = False
-    column_list = ['id', 'plans', 'credit_cards']
-    column_labels = dict(id='Id', plans='Planos', credit_cards='Cartões de Crédito')
+    can_create = True
+    can_delete = False
+
+    column_list = ['id', 'plan', 'user_plan', 'credit_card', 'price', 'date']
+    column_labels = dict(
+        id='Id',
+        plan='Plano',
+        credit_card='Cartão de Crédito',
+        date='Data',
+        user_plan='Contratação',
+        price='Preço')
+    form_columns = ['plan', 'credit_card']
+
+    def _price_formatter(view, context, model, name):
+        return model.plan.price
+
+    def _date_formatter(view, context, model, name):
+        if model.date is not None:
+            return model.date.strftime('%d/%m/%Y %H:%M:%S')
+        return model.date
+
+    column_formatters = {
+        'price': _price_formatter,
+        'date': _date_formatter
+    }
 
     def get_count_query(self):
         """Count of the requests with the user_id equal to the current user."""
@@ -40,6 +100,9 @@ class PurchaseUser(UserModelView):
     def get_query(self):
         """Select only the requests with the user_id equal to the current user."""
         return super(PurchaseUser, self).get_query().filter(Purchase.user_id == current_user.id)
+
+    def on_model_change(self, form, model, is_created):
+        model.user_id = current_user.id
 
 
 class CreditCardUser(UserModelView):
@@ -50,10 +113,16 @@ class CreditCardUser(UserModelView):
     def _number_formatter(view, context, model, name):
         """Format the card number to show only the last 4 digits."""
         number_str = repr(model.number)
-        return '****' + number_str[len(number_str)-4:]
+        return '****' + number_str[len(number_str) - 4:]
+
+    def _exp_date_formatter(view, context, model, name):
+        if model.exp_date is not None:
+            return model.exp_date.strftime('%m/%Y')
+        return model.exp_date
 
     column_formatters = {
         'number': _number_formatter,
+        'exp_date': _exp_date_formatter
     }
 
     def get_count_query(self):
@@ -67,6 +136,32 @@ class CreditCardUser(UserModelView):
     def on_model_change(self, form, model, is_created):
         model.user_id = current_user.id
 
+    def is_accessible(self):
+        """Prevent administration of ResourceRequests unless the currently
+        logged-in user has the "end-user" role.
+        """
+        return current_user.has_role('end-user')
+
+
+class UserInfoUser(UserAdmin):
+    can_create = False
+    form_columns = ['name', 'last_name', 'email', 'cpf', 'cnpj', 'company']
+    column_exclude_list = ['roles']
+
+    def get_count_query(self):
+        """Count of the requests with the user_id equal to the current user."""
+        return self.session.query(func.count(User.id)).filter(User.id == current_user.id)
+
+    def get_query(self):
+        """Select only the requests with the user_id equal to the current user."""
+        return super(UserInfoUser, self).get_query().filter(User.id == current_user.id)
+
+    def is_accessible(self):
+        """Prevent administration of ResourceRequests unless the currently
+        logged-in user has the "end-user" role.
+        """
+        return current_user.has_role('end-user')
+
 
 class ResourceRequestsUser(UserModelView):
     # User can create, view and delete requests, but cannot edit them
@@ -79,11 +174,12 @@ class ResourceRequestsUser(UserModelView):
     column_details_list = ['id', 'message_date', 'message', 'admin_rel', 'answer_date', 'answer']
     form_excluded_columns = ['message_date', 'answer_date', 'answer', 'id', 'admin_rel', 'user_rel']
     column_labels = dict(
-        id='id',
+        id='Id',
         message_date='Data da Mensagem',
         admin_rel='Administrador',
         answer_date='Data da Resposta',
-        answer='Resposta')
+        answer='Resposta',
+        message='Mensagem')
 
     # CKeditor - Text editor for the answer
     extra_js = ['//cdn.ckeditor.com/4.6.0/standard/ckeditor.js']

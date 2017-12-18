@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-
+import datetime
+import pygal
 from flask_admin.contrib import sqla
 from flask_admin.contrib.sqla import validators
 from flask_security import current_user, utils
@@ -10,6 +11,7 @@ from wtforms.fields import PasswordField, IntegerField
 
 from cloud_computing.model.models import ResourceRequests
 from cloud_computing.utils.form_utils import ReadonlyCKTextAreaField, CKTextAreaField, ReadOnlyIntegerField
+
 
 ADMIN_RESOURCES_REQUEST_MESSAGE_LENGTH = 100
 REMOVE_ID = '2'
@@ -25,6 +27,7 @@ class AdminView(sqla.ModelView):
 
 
 class UserAdmin(AdminView):
+    can_delete = False
     # Don't display the password on the list of Users
     column_list = ['id', 'name', 'last_name', 'email', 'cpf', 'cnpj',
                    'company', 'active', 'confirmed_at', 'roles']
@@ -51,6 +54,15 @@ class UserAdmin(AdminView):
 
     column_searchable_list = ['id', 'name', 'last_name', 'email', 'cpf',
                               'cnpj', 'company', 'active', 'confirmed_at']
+
+    def _comfirmed_at_formatter(view, context, model, name):
+        if model.confirmed_at is not None:
+            return model.confirmed_at.strftime('%d/%m/%Y')
+        return model.confirmed_at
+
+    column_formatters = {
+        'confirmed_at': _comfirmed_at_formatter
+    }
 
     def scaffold_form(self):
         """On the form for creating or editing a User, don't display a field
@@ -88,11 +100,11 @@ class RoleAdmin(AdminView):
 
 
 class PlanAdmin(AdminView):
-    column_list = ['title', 'price', 'duration_months', 'cpu', 'gpu', 'ram',
-                   'hd', 'os', 'is_public']
-    column_searchable_list = ['title', 'price', 'duration_months', 'shop_description',
+    column_list = ['title', 'auto_price', 'price', 'duration_months',
+                   'cpu', 'os', 'gpu', 'ram', 'hd', 'is_public']
+    column_searchable_list = ['title', 'auto_price', 'duration_months', 'duration_months', 'shop_description',
                               'is_public']
-    form_columns = ['title', 'price', 'duration_months', 'cpu', 'gpu', 'ram',
+    form_columns = ['title', 'auto_price', 'price', 'duration_months', 'cpu', 'gpu', 'ram',
                     'hd', 'os', 'shop_description', 'thumbnail',
                     'hero_image', 'is_public']
     column_labels = dict(
@@ -105,7 +117,8 @@ class PlanAdmin(AdminView):
         rams='RAMs',
         hds='HDs',
         os='OS',
-        is_public='É Público?')
+        is_public='É Público?',
+        auto_price='Preço automático?')
 
 
 class ResourceRequestsAdmin(AdminView):
@@ -142,7 +155,6 @@ class ResourceRequestsAdmin(AdminView):
     column_formatters = {
         'message': _message_formatter,
         'message_date': _message_date_formatter
-
     }
 
     def get_count_query(self):
@@ -210,14 +222,17 @@ class CpuAdmin(ComponentAdmin):
     column_list = ['model', 'cores', 'frequency', 'price', 'total', 'available']
     form_columns = ['model', 'cores', 'frequency', 'price', 'available']
     column_searchable_list = column_list
-    column_labels = dict(model='Modelo', cores='Nº de Núcleos', frequency='Frequência',
-                         price='Preço', total='Total', available='Disponíveis')
-
+    column_labels = dict(
+        model='Modelo',
+        cores='Nº de Núcleos',
+        frequency='Frequência',
+        price='Preço',
+        total='Total',
+        available='Disponíveis')
     form_args = dict(
         cores=dict(validators=[ComponentAdmin.bigger_than_zero]),
         frequency=dict(validators=[ComponentAdmin.bigger_than_zero]),
-        price=dict(validators=[ComponentAdmin.bigger_than_zero])
-    )
+        price=dict(validators=[ComponentAdmin.bigger_than_zero]))
 
 
 class GpuAdmin(ComponentAdmin):
@@ -231,12 +246,10 @@ class GpuAdmin(ComponentAdmin):
         price='Preço',
         total='Total',
         available='Disponíveis')
-
     form_args = dict(
         ram=dict(validators=[ComponentAdmin.bigger_than_zero]),
         frequency=dict(validators=[ComponentAdmin.bigger_than_zero]),
-        price=dict(validators=[ComponentAdmin.bigger_than_zero])
-    )
+        price=dict(validators=[ComponentAdmin.bigger_than_zero]))
 
 
 class RamAdmin(ComponentAdmin):
@@ -260,13 +273,16 @@ class HdAdmin(ComponentAdmin):
     column_list = ['model', 'capacity', 'is_ssd', 'price', 'total', 'available']
     form_columns = ['model', 'capacity', 'is_ssd', 'price', 'available']
     column_searchable_list = column_list
-    column_labels = dict(model='Modelo', capacity='Capacidade', is_ssd='SSD', price='Preço',
-                         total='Total', available='Disponíveis')
-
+    column_labels = dict(
+        model='Modelo',
+        capacity='Capacidade',
+        is_ssd='SSD',
+        price='Preço',
+        total='Total',
+        available='Disponíveis')
     form_args = dict(
         capacity=dict(validators=[ComponentAdmin.bigger_than_zero]),
-        price=dict(validators=[ComponentAdmin.bigger_than_zero])
-    )
+        price=dict(validators=[ComponentAdmin.bigger_than_zero]))
 
 
 # TODO All the editing of a server should be in one screen
@@ -287,8 +303,7 @@ class ServerComponentAdmin(AdminView):
             raise ValidationError("Esse campo precisa ser maior que zero.")
 
     form_args = dict(
-        add_quantity=dict(validators=[bigger_than_zero])
-    )
+        add_quantity=dict(validators=[bigger_than_zero]))
 
     def scaffold_form(self):
         """Overrides the scaffold_form function. Adds the add_quantity field to the form."""
@@ -316,3 +331,58 @@ class ServerRamAdmin(ServerComponentAdmin):
 
 class ServerHdAdmin(ServerComponentAdmin):
     can_create = True
+
+
+class UserPlanAdmin(AdminView):
+    can_create = False
+    can_edit = False
+    can_view_details = True
+    can_delete = False
+    column_list = ['id', 'plan', 'server', 'start_date', 'end_date', 'time_remaining', 'user_plan_stats']
+    column_details_list = ['id', 'plan', 'server', 'start_date', 'end_date', 'time_remaining', 'user_plan_stats']
+
+    column_labels = dict(
+        id='Id',
+        plan='Plano',
+        server='Servidor',
+        start_date='Data de Início',
+        end_date='Data de Fim',
+        time_remaining='Tempo Restante',
+        user_plan_stats='Estatísticas de Uso')
+
+    def _graph_formatter(view, context, model, name):
+        date_l = []
+        cpu_usage_l = []
+        disk_usage_l = []
+        for plan_stats in model.user_plan_stats:
+            date_l.append(plan_stats.date)
+            cpu_usage_l.append(plan_stats.cpu_usage)
+            disk_usage_l.append(plan_stats.disk_usage)
+
+        date_chart = pygal.Line(x_label_rotation=20)
+        date_chart.x_labels = map(lambda d: d.strftime('%Y-%m-%d'), date_l)
+        date_chart.add("Cpu_Usage", cpu_usage_l)
+        date_chart.add("Disk_Usage", disk_usage_l)
+
+        return Markup(date_chart.render(True))
+
+    def _time_remaining(view, context, model, name):
+        time_remaining = model.end_date - datetime.datetime.now()
+        return str(time_remaining.days) + " dias restantes"
+
+    def _start_date_formatter(view, context, model, name):
+        if model.start_date is not None:
+            return model.start_date.strftime('%d/%m/%Y')
+        return model.start_date
+
+    def _end_date_formatter(view, context, model, name):
+        if model.end_date is not None:
+            return model.end_date.strftime('%d/%m/%Y')
+        return model.end_date
+
+    column_formatters = {
+        'user_plan_stats': _graph_formatter,
+        'time_remaining': _time_remaining,
+        'start_date': _start_date_formatter,
+        'end_date': _end_date_formatter
+    }

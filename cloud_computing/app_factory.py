@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 import warnings
 from flask import Flask
 from flask_admin import Admin
@@ -62,26 +61,28 @@ class AppFactory:
             db.session,
             endpoint='resource-requests-admin',
             name='Requisições'))
-        admin.add_view(_adm.CpuAdmin(models.Cpu, db.session,
-                                     category='Componentes',
-                                     name='CPUs'))
-        admin.add_view(_adm.GpuAdmin(models.Gpu, db.session,
-                                     category='Componentes',
-                                     name='GPUs'))
-        admin.add_view(_adm.RamAdmin(models.Ram, db.session,
-                                     category='Componentes',
-                                     name='Memórias RAM'))
-        admin.add_view(_adm.HdAdmin(models.Hd, db.session,
-                                    category='Componentes',
-                                    name='HDs'))
 
-        admin.add_view(_user.CreditCardUser(models.CreditCard, db.session, name='Cartões de Crédito'))
-        admin.add_view(_user.PurchaseUser(models.Purchase, db.session, name='Compras'))
-        admin.add_view(_user.ResourceRequestsUser(
-            models.ResourceRequests,
+        admin.add_view(_adm.CpuAdmin(
+            models.Cpu,
             db.session,
-            endpoint='resource-requests-user',
-            name='Requisitar Recurso'))
+            category='Componentes',
+            name='CPUs'))
+        admin.add_view(_adm.GpuAdmin(
+            models.Gpu,
+            db.session,
+            category='Componentes',
+            name='GPUs'))
+        admin.add_view(_adm.RamAdmin(
+            models.Ram,
+            db.session,
+            category='Componentes',
+            name='Memórias RAM'))
+        admin.add_view(_adm.HdAdmin(
+            models.Hd,
+            db.session,
+            category='Componentes',
+            name='HDs'))
+
         admin.add_view(_adm.ServerAdmin(
             models.Server,
             db.session,
@@ -91,15 +92,54 @@ class AppFactory:
             warnings.filterwarnings('ignore',
                                     'Fields missing from ruleset',
                                     UserWarning)
-            admin.add_view(_adm.ServerGpuAdmin(models.ServerGpu,
-                                               db.session,
-                                               category='Servidores'))
-            admin.add_view(_adm.ServerRamAdmin(models.ServerRam,
-                                               db.session,
-                                               category='Servidores'))
-            admin.add_view(_adm.ServerHdAdmin(models.ServerHd,
-                                              db.session,
-                                              category='Servidores'))
+            admin.add_view(_adm.ServerGpuAdmin(
+                models.ServerGpu,
+                db.session,
+                category='Servidores'))
+            admin.add_view(_adm.ServerRamAdmin(
+                models.ServerRam,
+                db.session,
+                category='Servidores'))
+            admin.add_view(_adm.ServerHdAdmin(
+                models.ServerHd,
+                db.session,
+                category='Servidores'))
+
+        admin.add_view(_adm.UserPlanAdmin(
+                models.UserPlan,
+                db.session,
+                name='Uso de Recursos',
+                endpoint='user-plan-admin',
+                category='Servidores'))
+
+        admin.add_view(_user.UserPlanView(
+            models.UserPlan,
+            db.session,
+            name='Planos Contratados'))
+        admin.add_view(_user.ResourceRequestsUser(
+            models.ResourceRequests,
+            db.session,
+            endpoint='resource-requests-user',
+            name='Requisitar Recurso'))
+        admin.add_view(_user.UserInfoUser(
+            models.User,
+            db.session,
+            category='Conta',
+            endpoint='alterar-informacoes',
+            name='Alterar Informações'))
+        admin.add_view(_user.CreditCardUser(
+            models.CreditCard,
+            db.session,
+            category='Conta',
+            name='Cartões de Crédito'))
+        admin.add_view(_user.PurchaseUser(
+            models.Purchase,
+            db.session,
+            category='Conta',
+            name='Compras'))
+        admin.add_view(_user.UserModelView(
+            models.UserPlanStats,
+            db.session))
 
     def __config_database_and_security(self):
         db.init_app(self.app)

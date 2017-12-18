@@ -140,38 +140,42 @@ def setup_development_data(app):
         middle_plan_description = "Descrição do plano intermediário"
         advanced_plan_description = "Descrição do plano avançado"
 
-        get_or_create(db.session, Plan,
-                      title='Plano básico',
-                      price=49.99,
-                      shop_description=basic_plan_description,
-                      duration_months=1,
-                      is_public=True,
-                      cpu_model='CPU 2 Cores 2.0',
-                      os_name='Linux',
-                      hero_image="https://i.imgur.com/ZVunLlo.png",
-                      thumbnail="https://i.imgur.com/IBxTPUs.jpg")
-
-        get_or_create(db.session, Plan,
-                      title='Plano intermediário',
-                      price=99.99,
-                      shop_description=middle_plan_description,
-                      duration_months=2,
-                      is_public=True,
-                      cpu_model='CPU 4 Cores 2.0',
-                      os_name='Linux',
-                      hero_image="https://i.imgur.com/jMpKAaJ.png",
-                      thumbnail="https://i.imgur.com/gT83VXZ.jpg")
-
-        get_or_create(db.session, Plan,
-                      title='Plano avançado',
-                      price=149.99,
-                      shop_description=advanced_plan_description,
-                      duration_months=2,
-                      is_public=True,
-                      cpu_model='CPU 4 Cores 2.0',
-                      os_name='Linux',
-                      hero_image="https://i.imgur.com/jXdehmz.jpg",
-                      thumbnail="https://i.imgur.com/YJChIXK.jpg")
+        if get(db.session, Plan, title='Plano básico') is None:
+            get_or_create(db.session, Plan,
+                          title='Plano básico',
+                          price=49.99,
+                          shop_description=basic_plan_description,
+                          duration_months=1,
+                          is_public=True,
+                          auto_price=False,
+                          cpu_model='CPU 2 Cores 2.0',
+                          os_name='Linux',
+                          hero_image="https://i.imgur.com/ZVunLlo.png",
+                          thumbnail="https://i.imgur.com/IBxTPUs.jpg")
+        if get(db.session, Plan, title='Plano intermediário') is None:
+            get_or_create(db.session, Plan,
+                          title='Plano intermediário',
+                          price=99.99,
+                          shop_description=middle_plan_description,
+                          duration_months=2,
+                          is_public=True,
+                          auto_price=False,
+                          cpu_model='CPU 4 Cores 2.0',
+                          os_name='Linux',
+                          hero_image="https://i.imgur.com/jMpKAaJ.png",
+                          thumbnail="https://i.imgur.com/gT83VXZ.jpg")
+        if get(db.session, Plan, title='Plano avançado') is None:
+            get_or_create(db.session, Plan,
+                          title='Plano avançado',
+                          price=149.99,
+                          shop_description=advanced_plan_description,
+                          duration_months=2,
+                          is_public=True,
+                          auto_price=False,
+                          cpu_model='CPU 4 Cores 2.0',
+                          os_name='Linux',
+                          hero_image="https://i.imgur.com/jXdehmz.jpg",
+                          thumbnail="https://i.imgur.com/YJChIXK.jpg")
 
         if get(db.session, Server, id=SERVER_ID) is None:
             get_or_create(db.session, Server,

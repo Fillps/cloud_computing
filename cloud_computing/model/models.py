@@ -4,11 +4,13 @@ from slugify import slugify
 from flask_security import RoleMixin, UserMixin
 from sqlalchemy import func, event
 from sqlalchemy.ext.declarative import declared_attr
-from sqlalchemy.orm import validates
+import datetime
 from wtforms import ValidationError
+from sqlalchemy.orm import validates, Session
 
 from cloud_computing.model.database import db
-from cloud_computing.utils.db_utils import get
+from cloud_computing.utils.form_utils import add_months
+
 
 # Create a table to support many-to-many relationship between Users and Roles
 roles_users = db.Table(
@@ -56,8 +58,8 @@ class User(db.Model, UserMixin):
 
 
 class Plan(db.Model):
-    id = db.Column(db.Integer(), primary_key=True)
-    title = db.Column(db.Text, unique=True)
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.Text, unique=True, default='Customizado')
     price = db.Column(db.Float(), nullable=False)
     duration_months = db.Column(db.Integer, nullable=False)
     cpu_model = db.Column(db.Text, db.ForeignKey('cpu.model'), nullable=False)
@@ -67,6 +69,7 @@ class Plan(db.Model):
     thumbnail = db.Column(db.Text, default='http://placehold.it/700x400')
     hero_image = db.Column(db.Text, default='http://placehold.it/900x400')
     is_public = db.Column(db.Boolean, default='false')
+    auto_price = db.Column(db.Boolean, default=True)
 
     os = db.relationship('Os', backref=db.backref('plans'))
     cpu = db.relationship('Cpu', backref=db.backref('plans'))
@@ -79,6 +82,51 @@ class Plan(db.Model):
         """Creates the slug url, used on the item detail page."""
         self.slug_url = slugify(value)
         return value
+
+    def __str__(self):
+        return self.title
+
+    @validates('auto_price')
+    def auto_price_update(self, key, value):
+        if value is True:
+            self.price = -1
+        return value
+
+    @validates('price')
+    def price_update(self, key, value):
+        if self.auto_price is True:
+            if self.cpu_model is not None:
+                return self.calculate_price()
+        return value
+
+    @validates('cpu')
+    def cpu_update(self, key, value):
+        if self.auto_price is True:
+            self.price = -1
+        return value
+
+    def calculate_price(self):
+        price = Cpu.query.filter_by(model=self.cpu_model).first().price * self.duration_months
+        for plan_hd in PlanHd.query.filter_by(plan_id=self.id):
+            price += plan_hd.quantity * plan_hd.hd.price * self.duration_months
+        for plan_ram in PlanRam.query.filter_by(plan_id=self.id):
+            price += plan_ram.quantity * plan_ram.ram.price * self.duration_months
+        for plan_gpu in PlanGpu.query.filter_by(plan_id=self.id):
+            price += plan_gpu.quantity * plan_gpu.gpu.price * self.duration_months
+        return price
+
+
+@event.listens_for(Plan, 'after_insert')
+def plan_after_insert(maper, connection, target):
+    values = {}
+    if target.title == 'Customizado':
+        values['title'] = 'Customizado-' + str(target.id)
+    if target.auto_price is True:
+        values['price'] = target.calculate_price()
+    if values:
+        connection.execute(Plan.__table__.update()
+                           .where(Plan.__table__.c.id==target.id)
+                           .values(**values))
 
 
 class ResourceRequests(db.Model):
@@ -150,7 +198,7 @@ class Os(db.Model):
 
 class PlanResource:
     backref_plan = 'plan_comps'
-    quantity = db.Column(db.Integer)
+    quantity = db.Column(db.Integer, default=1)
 
     @declared_attr
     def plan_id(self):
@@ -158,29 +206,59 @@ class PlanResource:
                          primary_key=True)
 
     @declared_attr
-    def plans(self):
+    def plan(self):
         return db.relationship('Plan', backref=db.backref(self.backref_plan))
+
+    @validates('quantity')
+    def quantity_update(self, key, value):
+        if self.plan.auto_price is True:
+            self.plan.price = -1
+        return value
 
 
 class PlanGpu(db.Model, PlanResource):
     backref_plan = 'plan_gpus'
 
     gpu_model = db.Column(db.Text, db.ForeignKey('gpu.model'), primary_key=True)
-    gpus = db.relationship('Gpu', backref=db.backref('plan_gpus'))
+    gpu = db.relationship('Gpu', backref=db.backref('plan_gpu'))
 
 
 class PlanRam(db.Model, PlanResource):
     backref_plan = 'plan_rams'
 
     ram_model = db.Column(db.Text, db.ForeignKey('ram.model'), primary_key=True)
-    rams = db.relationship('Ram', backref=db.backref('plan_rams'))
+    ram = db.relationship('Ram', backref=db.backref('plan_ram'))
 
 
 class PlanHd(db.Model, PlanResource):
     backref_plan = 'plan_hds'
 
     hd_model = db.Column(db.Text, db.ForeignKey('hd.model'), primary_key=True)
-    hds = db.relationship('Hd', backref=db.backref('plan_hds'))
+    hd = db.relationship('Hd', backref=db.backref('plan_hd'))
+
+
+@event.listens_for(PlanGpu, 'after_insert')
+def gpu_plan_after_insert(maper, connection, target):
+    if target.plan.auto_price is True:
+        connection.execute(Plan.__table__.update()
+                           .where(Plan.__table__.c.id == target.plan_id)
+                           .values(price=target.plan.calculate_price()))
+
+
+@event.listens_for(PlanRam, 'after_insert')
+def ram_plan_after_insert(maper, connection, target):
+    if target.plan.auto_price is True:
+        connection.execute(Plan.__table__.update()
+                           .where(Plan.__table__.c.id == target.plan_id)
+                           .values(price=target.plan.calculate_price()))
+
+
+@event.listens_for(PlanHd, 'after_insert')
+def hd_plan_after_insert(maper, connection, target):
+    if target.plan.auto_price is True:
+        connection.execute(Plan.__table__.update()
+                           .where(Plan.__table__.c.id == target.plan_id)
+                           .values(price=target.plan.calculate_price()))
 
 
 class CreditCard(db.Model):
@@ -193,16 +271,39 @@ class CreditCard(db.Model):
 
     users = db.relationship('User', backref=db.backref('credit_cards'))
 
+    def __str__(self):
+        number_str = repr(self.number)
+        return '****' + number_str[len(number_str) - 4:]
+
 
 class Purchase(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     credit_card_id = db.Column(db.Integer, db.ForeignKey('credit_card.id'), nullable=False)
     plan_id = db.Column(db.Integer, db.ForeignKey('plan.id'), nullable=False)
+    user_plan_id = db.Column(db.Integer, db.ForeignKey('user_plan.id'))
+    date = db.Column(db.DateTime, server_default=func.now())
 
-    users = db.relationship('User', backref=db.backref('purchases'))
-    credit_cards = db.relationship('CreditCard', backref=db.backref('purchases'))
-    plans = db.relationship('Plan', backref=db.backref('purchases'))
+    user = db.relationship('User', backref=db.backref('purchase'))
+    credit_card = db.relationship('CreditCard', backref=db.backref('purchase'))
+    plan = db.relationship('Plan', backref=db.backref('purchase'), )
+    user_plan = db.relationship('UserPlan', backref=db.backref('purchases'), foreign_keys=[user_plan_id])
+
+
+@event.listens_for(Purchase, 'after_insert')
+def purchase_after_insert(maper, connection, target):
+    """Creates or updates a UserPlan and updates the end_date by the plan duration_months."""
+    @event.listens_for(Session, "after_flush", once=True)
+    def receive_after_flush(session, context):
+
+        if target.user_plan_id is None:
+            user_plan = UserPlan(user_id=target.user_id, plan_id=target.plan_id, first_purchase_id=target.id)
+            user_plan.end_date = add_months(datetime.datetime.now(), target.plan.duration_months)
+            session.add(user_plan)
+        else:
+            connection.execute(UserPlan.__table__.update()
+                               .where(UserPlan.__table__.c.id==target.user_plan_id)
+                               .values(end_date=add_months(target.user_plan.end_date, target.plan.duration_months)))
 
 
 class Server(db.Model):
@@ -235,7 +336,7 @@ class Server(db.Model):
     @validates('cpu_model')
     def cpu_model_update(self, key, value):
         """Update the cores_available when the cpu_model updates."""
-        new_cpu = get(db.session, Cpu, model=value)
+        new_cpu = Cpu.query.filter_by(model=value).first()
         if self.cpu_model is None:
             cores_available = new_cpu.cores
         elif self.cpu.available < 1:
@@ -264,6 +365,14 @@ class Server(db.Model):
         else:
             self.__setattr__(available, available_value + value - old_value)
         return value
+
+
+@event.listens_for(Server, 'before_insert')
+def server_before_insert(maper, connection, target):
+    """Initialize the available slots equal to total_slots."""
+    target.ram_slot_available = target.ram_slot_total
+    target.gpu_slot_available = target.gpu_slot_total
+    target.hd_slot_available = target.hd_slot_total
 
 
 class ServerResource:
@@ -498,10 +607,10 @@ def server_hd_before_insert(maper, connection, target):
         else:
             server_values = {'hd_available': target.server.hd_available + added_capacity,
                              'hd_total': target.server.hd_available + added_capacity}
+        server_values['hd_slot_available'] = target.server.hd_slot_available - target.quantity
         connection.execute(Server.__table__.update()
                            .where(Server.__table__.c.id == target.server_id)
-                           .values(**server_values,
-                                   hd_slot_available=target.server.hd_slot_available - target.quantity))
+                           .values(**server_values))
         connection.execute(Hd.__table__.update()
                            .where(Hd.__table__.c.model == target.hd_model)
                            .values(available=target.hd.available - target.quantity))
@@ -523,11 +632,41 @@ def server_hd_before_delete(maper, connection, target):
         else:
             server_values = {'hd_available': target.server.hd_available - removed_capacity,
                              'hd_total': target.server.hd_available - removed_capacity}
-
+        server_values['hd_slot_available'] = target.server.hd_slot_available - target.quantity
         connection.execute(Server.__table__.update()
                            .where(Server.__table__.c.id == target.server_id)
-                           .values(**server_values,
-                                   hd_slot_available=target.server.hd_slot_available + target.quantity))
+                           .values(**server_values))
         connection.execute(Hd.__table__.update()
                            .where(Hd.__table__.c.model == target.hd_model)
                            .values(available=target.hd.available + target.quantity))
+
+
+class UserPlan(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    plan_id = db.Column(db.Integer, db.ForeignKey('plan.id'), nullable=False)
+    first_purchase_id = db.Column(db.Integer, db.ForeignKey('purchase.id'), nullable=False)
+    server_id = db.Column(db.Integer, db.ForeignKey('server.id'))
+    start_date = db.Column(db.DateTime, default=func.now())
+    end_date = db.Column(db.DateTime, default=func.now())
+
+    plan = db.relationship('Plan', backref=db.backref('user_plan'))
+    user = db.relationship('User', backref=db.backref('user_plan'))
+    server = db.relationship('Server', backref=db.backref('user_plans'))
+
+
+@event.listens_for(UserPlan, 'after_insert')
+def purchase_after_insert(maper, connection, target):
+    connection.execute(Purchase.__table__.update()
+                       .where(Purchase.__table__.c.id==target.first_purchase_id)
+                       .values(user_plan_id=target.id))
+
+
+class UserPlanStats(db.Model):
+    user_plan_id = db.Column(db.Integer, db.ForeignKey('user_plan.id'), nullable=False, primary_key=True)
+    date = db.Column(db.DateTime, primary_key=True, default=func.now())
+    cpu_usage = db.Column(db.Float)
+    disk_usage = db.Column(db.Float)
+
+    user_plan = db.relationship('UserPlan', backref=db.backref('user_plan_stats'))
+
