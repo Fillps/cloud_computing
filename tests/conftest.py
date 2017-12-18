@@ -3,14 +3,14 @@
 import inspect
 import pytest
 
-from cloud_computing import create_app
+from cloud_computing.app_factory import AppFactory
 from cloud_computing.model.database import db as _db
 from . import factories
 
 
 @pytest.yield_fixture(scope='session')
 def app():
-    app = create_app('../configs/local_test_postgres.py')
+    app = AppFactory('../configs/local_test_postgres.py').get_app()
     ctx = app.app_context()
     ctx.push()
     yield app

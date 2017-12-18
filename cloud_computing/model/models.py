@@ -297,9 +297,17 @@ def purchase_after_insert(maper, connection, target):
     def receive_after_flush(session, context):
 
         if target.user_plan_id is None:
-            user_plan = UserPlan(user_id=target.user_id, plan_id=target.plan_id, first_purchase_id=target.id)
+            id_purchase = target.id
+            user_plan = UserPlan(user_id=target.user_id, plan_id=target.plan_id)
             user_plan.end_date = add_months(datetime.datetime.now(), target.plan.duration_months)
             session.add(user_plan)
+
+            @event.listens_for(UserPlan, 'after_insert')
+            def user_plan_after_insert(maper, connection, target):
+                connection.execute(Purchase.__table__.update()
+                                   .where(Purchase.__table__.c.id == id_purchase)
+                                   .values(user_plan_id=target.id))
+
         else:
             connection.execute(UserPlan.__table__.update()
                                .where(UserPlan.__table__.c.id==target.user_plan_id)
@@ -645,7 +653,6 @@ class UserPlan(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     plan_id = db.Column(db.Integer, db.ForeignKey('plan.id'), nullable=False)
-    first_purchase_id = db.Column(db.Integer, db.ForeignKey('purchase.id'), nullable=False)
     server_id = db.Column(db.Integer, db.ForeignKey('server.id'))
     start_date = db.Column(db.DateTime, default=func.now())
     end_date = db.Column(db.DateTime, default=func.now())
@@ -655,11 +662,8 @@ class UserPlan(db.Model):
     server = db.relationship('Server', backref=db.backref('user_plans'))
 
 
-@event.listens_for(UserPlan, 'after_insert')
-def purchase_after_insert(maper, connection, target):
-    connection.execute(Purchase.__table__.update()
-                       .where(Purchase.__table__.c.id==target.first_purchase_id)
-                       .values(user_plan_id=target.id))
+
+
 
 
 class UserPlanStats(db.Model):
