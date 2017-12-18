@@ -20,9 +20,81 @@
             <div class="card mt-4">
               <img class="card-img-top img-fluid" src="{{ plan.hero_image }}" alt="">
               <div class="card-body">
-                <h3 class="card-title">{{ plan.title }}</h3>
-                <h4>R${{ plan.price }}</h4>
+
+                <h2 class="card-title">{{ plan.title }}</h2>
+                <h4>R$ {{ plan.price }}</h4>
+                <h5>
+                  Duração: {{ plan.duration_months }} {% if plan.duration_months == 1 %} mês {% else %} meses {% endif %}
+                </h5>
+
+                <br>
                 <p class="card-text">{{ plan.shop_description }}</p>
+                <br>
+
+                <p class="card-text">Recursos disponíveis no plano:</p>
+                <p class="card-text">
+                  <ul>
+
+                    <li>Sistema operacional: {{ plan.os_name }}</li>
+
+                    <li>CPU:</li>
+                      <ul>
+                        <li>Modelo: {{ plan.cpu_model }}</li>
+                        <li>Núcleos: {{ plan.cpu.cores }}</li>
+                        <li>Frequência: {{ plan.cpu.frequency }} GHz</li>
+                      </ul>
+
+                    {% if gpu_list.count() > 0 %}
+
+                    <li>GPUs:</li>
+                    <ul>
+                      {% for gpu in gpu_list %}
+
+                      <li>Modelo: {{ gpu.model }}</li>
+                      <ul>
+                        <li>Frequência: {{ gpu.frequency }} GHz</li>
+                        <li>Memória dedicada: {{ gpu.ram }} GB</li>
+                      </ul>
+
+                      {% endfor %}
+                    </ul>
+
+                    {% endif %}
+
+                    {% if ram_list.count() > 0 %}
+
+                    <li>Memórias RAM:</li>
+                    <ul>
+                      {% for ram in ram_list %}
+
+                      <li>Modelo: {{ ram.model }}</li>
+                      <ul>
+                        <li>Capacidade: {{ ram.capacity }} GB</li>
+                      </ul>
+
+                      {% endfor %}
+                    </ul>
+
+                    {% endif %}
+
+                    {% if hd_list.count() > 0 %}
+
+                    <li>HDs:</li>
+                    <ul>
+                      {% for hd in hd_list %}
+
+                      <li>Modelo: {{ hd.model }}</li>
+                      <ul>
+                        <li>Capacidade: {{ hd.capacity }} GB</li>
+                        <li>SSD: {% if hd.is_ssd %} Sim {% else %} Não {% endif %}</li>
+                      </ul>
+
+                      {% endfor %}
+                    </ul>
+
+                    {% endif %}
+                  </ul>
+                </p>
               </div>
             </div>
 

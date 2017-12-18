@@ -70,8 +70,10 @@
                     <h4 class="card-title">
                       <a href="{{ url_for('default.show_item', slug_url=plan.slug_url) }}">{{ plan.title }}</a>
                     </h4>
-                    <h5>R${{ plan.price }}</h5>
-                    <p class="card-text">{{ plan.shop_description }}</p>
+                    <h4>R$ {{ plan.price }}</h4>
+                    <p class="card-text">
+                      Duração: {{ plan.duration_months }} {% if plan.duration_months == 1 %} mês {% else %} meses {% endif %}
+                    </p>
                   </div>
                 </div>
               </div>

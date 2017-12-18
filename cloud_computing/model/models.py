@@ -669,4 +669,3 @@ class UserPlanStats(db.Model):
     disk_usage = db.Column(db.Float)
 
     user_plan = db.relationship('UserPlan', backref=db.backref('user_plan_stats'))
-
