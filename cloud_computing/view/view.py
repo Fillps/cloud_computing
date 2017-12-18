@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, request
 from cloud_computing.controller.controller import Controller
 
 
@@ -25,3 +25,13 @@ def show_item(slug_url):
 
     return render_template('shop-item.html', plan=plan, gpu_list=gpu_list,
                            ram_list=ram_list, hd_list=hd_list)
+
+
+@default_blueprint.route('/search-results', methods=['POST'])
+def search_elements():
+    """Searches for matches to the input on the database."""
+    search_input = request.form['search-box']
+
+    results = []
+
+    return render_template('shop-search-results.html', results=results)
