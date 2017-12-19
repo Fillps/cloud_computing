@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 import warnings
 from flask import Flask
 from flask_admin import Admin
@@ -7,10 +8,10 @@ from flask_security import Security
 from flask_security import user_registered
 from flask_babelex import Babel
 
-from cloud_computing.model.database import db, user_datastore
+from cloud_computing.utils.db_setup import setup_database_data
+from cloud_computing.model.database import db, user_datastore, whooshee
 from cloud_computing.model import models
 from cloud_computing.view import admin as _adm, end_user as _user
-from cloud_computing.utils import db_utils
 from cloud_computing.view.register import ExtendedRegisterForm
 from cloud_computing.view.view import default_blueprint
 
@@ -23,12 +24,15 @@ class AppFactory:
         Heroku(self.app)
         self.app.config.from_pyfile(config_filename)
 
-        # Cria o tradutor
         babel = Babel(self.app)
 
         self.__config_database_and_security()
         self.__config_flask_admin()
         self.__config_blueprints()
+
+        @babel.localeselector
+        def get_locale():
+            return 'pt_BR'
 
         @user_registered.connect_via(self.app)
         def user_registered_sighandler(sender, **extra):
@@ -37,11 +41,6 @@ class AppFactory:
             role = user_datastore.find_or_create_role('end-user')
             user_datastore.add_role_to_user(user, role)
             db.session.commit()
-
-        # Função que define a língua
-        @babel.localeselector
-        def get_locale():
-            return 'pt_BR'
 
     def get_app(self):
         return self.app
@@ -84,11 +83,17 @@ class AppFactory:
             db.session,
             category='Componentes',
             name='HDs'))
-
         admin.add_view(_adm.ServerAdmin(
             models.Server,
             db.session,
-            name='Servidores'))
+            category='Servidores',
+            name='Lista de Servidores'))
+        admin.add_view(_adm.UserPlanAdmin(
+            models.UserPlan,
+            db.session,
+            name='Uso de Recursos',
+            endpoint='user-plan-admin',
+            category='Servidores'))
 
         admin.add_view(_user.UserPlanView(
             models.UserPlan,
@@ -115,11 +120,18 @@ class AppFactory:
             db.session,
             category='Conta',
             name='Compras'))
+        admin.add_view(_user.UserModelView(
+            models.UserPlanStats,
+            db.session))
 
     def __config_database_and_security(self):
         db.init_app(self.app)
         self.__config_flask_security()
-        db_utils.setup_development_data(self.app)
+
+        self.app.config['WHOOSHEE_MIN_STRING_LEN'] = 1
+        whooshee.init_app(self.app)
+
+        setup_database_data(self.app)
 
     def __config_flask_security(self):
         Security(self.app, user_datastore, register_form=ExtendedRegisterForm)

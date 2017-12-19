@@ -1,19 +1,18 @@
 # -*- coding: utf-8 -*-
 
+import datetime
 from slugify import slugify
+from wtforms import ValidationError
 from flask_security import RoleMixin, UserMixin
 from sqlalchemy import func, event
 from sqlalchemy.ext.declarative import declared_attr
-import datetime
-from wtforms import ValidationError
 from sqlalchemy.orm import validates, Session
 
-from cloud_computing.model.database import db
-from cloud_computing.utils.db_utils import get, get_or_create
+from cloud_computing.model.database import db, whooshee
+from cloud_computing.utils.form_utils import add_months
+
 
 # Create a table to support many-to-many relationship between Users and Roles
-from cloud_computing.utils.util import add_months
-
 roles_users = db.Table(
     'roles_users',
     db.Column('user_id', db.Integer(), db.ForeignKey('user.id')),
@@ -58,11 +57,12 @@ class User(db.Model, UserMixin):
         return self.email
 
 
+@whooshee.register_model('title')
 class Plan(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.Text, unique=True, default='Customizado')
-    price = db.Column(db.Float, default=0, nullable=False)
-    period = db.Column(db.Integer, nullable=False)
+    price = db.Column(db.Float(), default=0, nullable=False)
+    duration_months = db.Column(db.Integer, nullable=False)
     cpu_model = db.Column(db.Text, db.ForeignKey('cpu.model'), nullable=False)
     os_name = db.Column(db.Text, db.ForeignKey('os.name'), nullable=False)
     shop_description = db.Column(db.Text)
@@ -107,13 +107,13 @@ class Plan(db.Model):
         return value
 
     def calculate_price(self):
-        price = Cpu.query.filter_by(model=self.cpu_model).first().price * self.period
+        price = Cpu.query.filter_by(model=self.cpu_model).first().price * self.duration_months
         for plan_hd in PlanHd.query.filter_by(plan_id=self.id):
-            price += plan_hd.quantity * plan_hd.hd.price * self.period
+            price += plan_hd.quantity * plan_hd.hd.price * self.duration_months
         for plan_ram in PlanRam.query.filter_by(plan_id=self.id):
-            price += plan_ram.quantity * plan_ram.ram.price * self.period
+            price += plan_ram.quantity * plan_ram.ram.price * self.duration_months
         for plan_gpu in PlanGpu.query.filter_by(plan_id=self.id):
-            price += plan_gpu.quantity * plan_gpu.gpu.price * self.period
+            price += plan_gpu.quantity * plan_gpu.gpu.price * self.duration_months
         return price
 
 
@@ -126,7 +126,7 @@ def plan_after_insert(maper, connection, target):
         values['price'] = target.calculate_price()
     if values:
         connection.execute(Plan.__table__.update()
-                           .where(Plan.__table__.c.id == target.id)
+                           .where(Plan.__table__.c.id==target.id)
                            .values(**values))
 
 
@@ -144,7 +144,6 @@ class ResourceRequests(db.Model):
 
 
 class Resource:
-    """Base class of Cpu, Gpu, Ram, Hd. Declares common attributes and functions shared by this classes."""
     model = db.Column(db.Text, primary_key=True)
     price = db.Column(db.Float, nullable=False)
     total = db.Column(db.Integer, nullable=False)
@@ -199,7 +198,6 @@ class Os(db.Model):
 
 
 class PlanResource:
-    """Base class of PlanGpu, PlanRam, PlanHd. Declares common attributes and functions shared by this classes."""
     backref_plan = 'plan_comps'
     quantity = db.Column(db.Integer, default=1)
 
@@ -304,23 +302,21 @@ class Purchase(db.Model):
 
 @event.listens_for(Purchase, 'after_insert')
 def purchase_after_insert(maper, connection, target):
-    """Creates or updates a UserPlan and updates the end_date by the plan period."""
-
+    """Creates or updates a UserPlan and updates the end_date by the plan duration_months."""
     @event.listens_for(Session, "after_flush", once=True)
     def receive_after_flush(session, context):
 
         if target.user_plan_id is None:
             user_plan = UserPlan(user_id=target.user_id, plan_id=target.plan_id, first_purchase_id=target.id)
-            user_plan.end_date = add_months(datetime.datetime.now(), target.plan.period)
+            user_plan.end_date = add_months(datetime.datetime.now(), target.plan.duration_months)
             session.add(user_plan)
         else:
             connection.execute(UserPlan.__table__.update()
-                               .where(UserPlan.__table__.c.id == target.user_plan_id)
-                               .values(end_date=add_months(target.user_plan.end_date, target.plan.period)))
+                               .where(UserPlan.__table__.c.id==target.user_plan_id)
+                               .values(end_date=add_months(target.user_plan.end_date, target.plan.duration_months)))
 
 
 class Server(db.Model):
-    """Definition of Server"""
     id = db.Column(db.Integer, primary_key=True)
     cpu_model = db.Column(db.Text, db.ForeignKey('cpu.model'), nullable=False)
     cores_available = db.Column(db.Integer, default=0)
@@ -350,7 +346,7 @@ class Server(db.Model):
     @validates('cpu_model')
     def cpu_model_update(self, key, value):
         """Update the cores_available when the cpu_model updates."""
-        new_cpu = get(db.session, Cpu, model=value)
+        new_cpu = Cpu.query.filter_by(model=value).first()
         if self.cpu_model is None:
             cores_available = new_cpu.cores
         elif self.cpu.available < 1:
@@ -390,9 +386,8 @@ def server_before_insert(maper, connection, target):
 
 
 class ServerResource:
-    """Definition of ServerResource"""
-
     backref_plan = 'server_resources'
+    quantity = db.Column(db.Integer, default=0)
 
     @declared_attr
     def server_id(self):
@@ -401,11 +396,9 @@ class ServerResource:
     @declared_attr
     def server(self):
         return db.relationship('Server', backref=db.backref(self.backref_plan))
-    quantity = db.Column(db.Integer, default=0)
 
 
 class ServerGpu(db.Model, ServerResource):
-    """Definition of ServerGpu"""
     backref_plan = 'server_gpus'
     gpu_model = db.Column(db.Text, db.ForeignKey('gpu.model'), primary_key=True)
     total_capacity = db.Column(db.Integer, default=0)
@@ -428,17 +421,17 @@ class ServerGpu(db.Model, ServerResource):
             return value
         elif self.gpu.available < value - self.quantity:
             raise ValidationError(
-                "Não existem recursos diponíveis. Tente diminuir a quantidade ou adicionar novos recursos.")
+                "Não existem recursos disponíveis. Tente diminuir a quantidade ou adicionar novos recursos.")
         elif self.server.gpu_slot_available < value - self.quantity:
             raise ValidationError(
-                "Não existem slots diponíveis. Tente diminuir a quantidade de recursos.")
+                "Não existem slots disponíveis. Tente diminuir a quantidade de recursos.")
 
         net_capacity = self.gpu.ram * (value - self.quantity)
 
         if self.available_capacity + net_capacity < 0:
             raise ValidationError(
                 "O uso do recurso está maior do que o disponível. Tente diminuir a utilização dos recursos"
-                " ou aumente a quantiadde de recursos a serem adicionados.")
+                " ou aumente a quantidade de recursos a serem adicionados.")
         else:
             self.total_capacity += net_capacity
             self.available_capacity += net_capacity
@@ -449,15 +442,14 @@ class ServerGpu(db.Model, ServerResource):
 
 @event.listens_for(ServerGpu, 'before_insert')
 def server_gpu_before_insert(maper, connection, target):
-    """
-        Before the insert, updates the total_capacity, available_capacity, gpu.available
-        and server.gpu_slot_available based on the quantity.
+    """Before the insert, updates the total_capacity, available_capacity,
+    gpu.available and server.gpu_slot_available based on the quantity.
     """
     if target.gpu.available < target.quantity:
-        raise ValidationError("Não existem recursos diponíveis. Tente diminuir "
+        raise ValidationError("Não existem recursos disponíveis. Tente diminuir "
                               "a quantidade ou adicionar novos recursos.")
     elif target.server.gpu_slot_available < target.quantity:
-        raise ValidationError("Não existem slots no servidor diponíveis."
+        raise ValidationError("Não existem slots no servidor disponíveis."
                               "Tente diminuir a quantidade.")
     else:
         target.available_capacity = target.gpu.ram * target.quantity
@@ -472,9 +464,8 @@ def server_gpu_before_insert(maper, connection, target):
 
 @event.listens_for(ServerGpu, 'before_delete')
 def server_gpu_before_delete(maper, connection, target):
-    """
-        Before the delete, updates the gpu.available and server.gpu_slot_available
-        based on the quantity.
+    """ Before the delete, updates the gpu.available and
+    server.gpu_slot_available based on the quantity.
     """
     if target.available_capacity < target.total_capacity:
         raise ValidationError('Erro! O GPU a ser deletado ainda está em uso!')
@@ -488,7 +479,6 @@ def server_gpu_before_delete(maper, connection, target):
 
 
 class ServerRam(db.Model, ServerResource):
-    """Definition of ServerRam"""
     backref_plan = 'server_rams'
     ram_model = db.Column(db.Text, db.ForeignKey('ram.model'), primary_key=True)
     ram = db.relationship('Ram', backref=db.backref(backref_plan))
@@ -498,9 +488,8 @@ class ServerRam(db.Model, ServerResource):
 
     @validates('quantity')
     def update_quantity(self, key, value):
-        """
-            When quantity is updated, updates the server.ram_total, server.ram_available, ram.available
-            and server.ram_slot_available.
+        """When quantity is updated, updates the server.ram_total,
+        server.ram_available, ram.available and server.ram_slot_available.
         """
         if value < 0:
             raise ValidationError('A quantidade precisa ser maior que zero.')
@@ -508,17 +497,17 @@ class ServerRam(db.Model, ServerResource):
             return value
         elif self.ram.available < value - self.quantity:
             raise ValidationError(
-                "Não existem recursos diponíveis. Tente diminuir a quantidade ou adicionar novos recursos.")
+                "Não existem recursos disponíveis. Tente diminuir a quantidade ou adicionar novos recursos.")
         elif self.server.ram_slot_available < value - self.quantity:
             raise ValidationError(
-                "Não existem slots diponíveis. Tente diminuir a quantidade de recursos.")
+                "Não existem slots disponíveis. Tente diminuir a quantidade de recursos.")
 
         net_capacity = self.ram.capacity * value - self.ram.capacity * self.quantity
 
         if self.server.ram_available + net_capacity < 0:
             raise ValidationError("O uso do recurso está maior do que o disponível. "
                                   "Tente diminuir a utilização dos recursos ou aumente "
-                                  "a quantiadde de recursos a serem adicionados.")
+                                  "a quantidade de recursos a serem adicionados.")
         elif self.server.ram_max < self.server.ram_total + net_capacity:
             raise ValidationError("RAM máxima do servidor atingida.")
         else:
@@ -531,15 +520,14 @@ class ServerRam(db.Model, ServerResource):
 
 @event.listens_for(ServerRam, 'before_insert')
 def server_ram_before_insert(maper, connection, target):
-    """
-        Before the insert, updates the server.ram_total, server.ram_available, ram.available
-        and server.ram_slot_available based on the quantity.
+    """ Before the insert, updates the server.ram_total, server.ram_available,
+    ram.available and server.ram_slot_available based on the quantity.
     """
     if target.ram.available < target.quantity:
-        raise ValidationError("Não existem recursos diponíveis. Tente diminuir "
+        raise ValidationError("Não existem recursos disponíveis. Tente diminuir "
                               "a quantidade ou adicionar novos recursos.")
     elif target.server.ram_slot_available < target.quantity:
-        raise ValidationError("Não existem slots no servidor diponíveis."
+        raise ValidationError("Não existem slots no servidor disponíveis."
                               "Tente diminuir a quantidade.")
     elif target.server.ram_max < target.server.ram_total + target.ram.capacity * target.quantity:
         raise ValidationError("RAM máxima do servidor atingida.")
@@ -557,9 +545,8 @@ def server_ram_before_insert(maper, connection, target):
 
 @event.listens_for(ServerRam, 'before_delete')
 def server_ram_before_delete(maper, connection, target):
-    """
-        Before the delete, updates the server.ram_total, server.ram_available, ram.available
-        and server.ram_slot_available based on the quantity.
+    """ Before the delete, updates the server.ram_total, server.ram_available,
+    ram.available and server.ram_slot_available based on the quantity.
     """
     if target.quantity * target.ram.capacity > target.server.ram_available:
         raise ValidationError('Erro! A RAM a ser deletada ainda está em uso!')
@@ -576,7 +563,6 @@ def server_ram_before_delete(maper, connection, target):
 
 
 class ServerHd(db.Model, ServerResource):
-    """Definition of ServerHd"""
     backref_plan = 'server_hds'
     hd_model = db.Column(db.Text, db.ForeignKey('hd.model'), primary_key=True)
     hd = db.relationship('Hd', backref=db.backref(backref_plan))
@@ -586,9 +572,9 @@ class ServerHd(db.Model, ServerResource):
 
     @validates('quantity')
     def update_quantity(self, key, value):
-        """
-            When quantity is updated, updates the server.hd_total, server.hd_available,
-            server.ssd_total, server.ssd_available, hd.available and server.hd_slot_available.
+        """ When quantity is updated, updates the server.hd_total,
+        server.hd_available, server.ssd_total, server.ssd_available,
+        hd.available and server.hd_slot_available.
         """
         if value < 0:
             raise ValidationError('A quantidade precisa ser maior que zero.')
@@ -596,10 +582,10 @@ class ServerHd(db.Model, ServerResource):
             return value
         elif self.hd.available < value - self.quantity:
             raise ValidationError(
-                "Não existem recursos diponíveis. Tente diminuir a quantidade ou adicionar novos recursos.")
+                "Não existem recursos disponíveis. Tente diminuir a quantidade ou adicionar novos recursos.")
         elif self.server.hd_slot_available < value - self.quantity:
             raise ValidationError(
-                "Não existem slots diponíveis. Tente diminuir a quantidade de recursos.")
+                "Não existem slots disponíveis. Tente diminuir a quantidade de recursos.")
 
         net_capacity = self.hd.capacity * value - self.hd.capacity * self.quantity
 
@@ -607,7 +593,7 @@ class ServerHd(db.Model, ServerResource):
                 (self.hd.is_ssd is False and self.server.hd_available + net_capacity < 0):
             raise ValidationError(
                 "O uso do recurso está maior do que o disponível. Tente diminuir a utilização dos recursos"
-                " ou aumente a quantiadde de recursos a serem adicionados.")
+                " ou aumente a quantidade de recursos a serem adicionados.")
         else:
             if self.hd.is_ssd is True:
                 self.server.ssd_total += net_capacity
@@ -622,15 +608,15 @@ class ServerHd(db.Model, ServerResource):
 
 @event.listens_for(ServerHd, 'before_insert')
 def server_hd_before_insert(maper, connection, target):
-    """
-        Before the insert, updates the server.hd_total, server.hd_available, server.ssd_total,
-        server.ssd_available, hd.available and server.hd_slot_available based on the quantity.
+    """Before the insert, updates the server.hd_total, server.hd_available,
+    server.ssd_total, server.ssd_available, hd.available and
+    server.hd_slot_available based on the quantity.
     """
     if target.hd.available < target.quantity:
-        raise ValidationError("Não existem recursos diponíveis. Tente diminuir "
+        raise ValidationError("Não existem recursos disponíveis. Tente diminuir "
                               "a quantidade ou adicionar novos recursos.")
     elif target.server.hd_slot_available < target.quantity:
-        raise ValidationError("Não existem slots no servidor diponíveis."
+        raise ValidationError("Não existem slots no servidor disponíveis."
                               "Tente diminuir a quantidade.")
     else:
         added_capacity = target.hd.capacity * target.quantity
@@ -651,9 +637,9 @@ def server_hd_before_insert(maper, connection, target):
 
 @event.listens_for(ServerHd, 'before_delete')
 def server_hd_before_delete(maper, connection, target):
-    """
-        Before the delete, updates the server.hd_total, server.hd_available, server.ssd_total,
-        server.ssd_available, hd.available and server.hd_slot_available based on the quantity.
+    """Before the delete, updates the server.hd_total, server.hd_available,
+    server.ssd_total, server.ssd_available, hd.available and
+    server.hd_slot_available based on the quantity.
     """
     if target.quantity * target.hd.capacity > target.server.hd_available:
         raise ValidationError('Erro! O HD a ser deletado ainda está em uso!')
@@ -665,11 +651,10 @@ def server_hd_before_delete(maper, connection, target):
         else:
             server_values = {'hd_available': target.server.hd_available - removed_capacity,
                              'hd_total': target.server.hd_available - removed_capacity}
-
+        server_values['hd_slot_available'] = target.server.hd_slot_available - target.quantity
         connection.execute(Server.__table__.update()
                            .where(Server.__table__.c.id == target.server_id)
-                           .values(**server_values,
-                                   hd_slot_available=target.server.hd_slot_available + target.quantity))
+                           .values(**server_values))
         connection.execute(Hd.__table__.update()
                            .where(Hd.__table__.c.model == target.hd_model)
                            .values(available=target.hd.available + target.quantity))
@@ -692,7 +677,7 @@ class UserPlan(db.Model):
 @event.listens_for(UserPlan, 'after_insert')
 def purchase_after_insert(maper, connection, target):
     connection.execute(Purchase.__table__.update()
-                       .where(Purchase.__table__.c.id == target.first_purchase_id)
+                       .where(Purchase.__table__.c.id==target.first_purchase_id)
                        .values(user_plan_id=target.id))
 
 

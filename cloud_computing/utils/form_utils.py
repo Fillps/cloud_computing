@@ -24,7 +24,6 @@ class CKTextAreaField(TextAreaField):
 
 class ReadonlyCKTextAreaField(CKTextAreaField):
     """Read-only version of the CKTWidget."""
-
     def __call__(self, *args, **kwargs):
         kwargs.setdefault('readOnly', True)
         return super(CKTextAreaField, self).__call__(*args, **kwargs)

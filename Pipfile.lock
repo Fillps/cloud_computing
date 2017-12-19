@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "58b217ec4fd0db9e7bed4ffa8cd4d60f4befb35207943dc0204c8d2aa2b201d4"
+            "sha256": "bd022c614f32da5be84caef61e6bbea13696a8c7c5795db730d7c8557e68ee64"
         },
         "host-environment-markers": {
             "implementation_name": "cpython",
@@ -9,9 +9,9 @@
             "os_name": "posix",
             "platform_machine": "x86_64",
             "platform_python_implementation": "CPython",
-            "platform_release": "4.13.16-302.fc27.x86_64",
+            "platform_release": "4.14.5-300.fc27.x86_64",
             "platform_system": "Linux",
-            "platform_version": "#1 SMP Thu Nov 30 15:33:36 UTC 2017",
+            "platform_version": "#1 SMP Mon Dec 11 16:00:36 UTC 2017",
             "python_full_version": "3.6.3",
             "python_version": "3.6",
             "sys_platform": "linux"
@@ -105,6 +105,12 @@
             ],
             "version": "==2.3.2"
         },
+        "flask-whooshee": {
+            "hashes": [
+                "sha256:625d0c7ad7693fa96c0e3e4dedd5e271edf4a2fe155a1f61ae38e734ef31c25a"
+            ],
+            "version": "==0.5.0"
+        },
         "flask-wtf": {
             "hashes": [
                 "sha256:d9a9e366b32dcbb98ef17228e76be15702cd2600675668bca23f63a7947fd5ac",
@@ -181,6 +187,13 @@
             ],
             "version": "==2.7.3.2"
         },
+        "pygal": {
+            "hashes": [
+                "sha256:27abab93cbc31e21f3c6bdecc05bda6cd3570cbdbd8297b7caa6904051b50d72",
+                "sha256:9204f05380b02a8a32f9bf99d310b51aa2a932cba5b369f7a4dc3705f0a4ce83"
+            ],
+            "version": "==2.4.0"
+        },
         "python-slugify": {
             "hashes": [
                 "sha256:c3733135d3b184196fdb8844f6a74bbfb9cf6720d1dcce3254bdc434353f938f",
@@ -227,6 +240,14 @@
                 "sha256:6246e5fc98a505824113fb6aca993d45ea284a2bcffdc2c65d0c538e53e4abd3"
             ],
             "version": "==0.13"
+        },
+        "whoosh": {
+            "hashes": [
+                "sha256:aa39c3c3426e3fd107dcb4bde64ca1e276a65a889d9085a6e4b54ba82420a852",
+                "sha256:7ca5633dbfa9e0e0fa400d3151a8a0c4bec53bd2ecedc0a67705b17565c31a83",
+                "sha256:e0857375f63e9041e03fedd5b7541f97cf78917ac1b6b06c1fcc9b45375dda69"
+            ],
+            "version": "==2.7.4"
         },
         "wtforms": {
             "hashes": [
