@@ -146,6 +146,7 @@ class AppFactory:
         db.init_app(self.app)
         self.__config_flask_security()
 
+        self.app.config['WHOOSHEE_MIN_STRING_LEN'] = 1
         whooshee.init_app(self.app)
 
         setup_database_data(self.app)
