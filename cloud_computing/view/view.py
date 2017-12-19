@@ -32,6 +32,6 @@ def search_elements():
     """Searches for matches to the input on the database."""
     search_input = request.form['search-box']
 
-    results = []
+    results = Controller.search_plan(search_input)
 
     return render_template('shop-search-results.html', results=results)

@@ -9,22 +9,13 @@
 
           <h1 class="my-4">Resultados da busca</h1>
 
-          <form class="navbar-form" action="{{ url_for('default.search_elements') }}" role="form" method="POST" id="search-form">
-            <div class="input-group add-on">
-              <input class="form-control" placeholder="Pesquisar" id="search_box" type="text">
-              <div class="input-group-btn">
-                <button class="btn btn-default search-button" type="submit"><i class="fa fa-search"></i></button>
-              </div>
-            </div>
-          </form>
-
         </div>
 
         <div class="col-lg-9">
 
           <div class="row">
 
-            {% if results.count() > 0 %}
+            {% if results and results.count() > 0 %}
 
               <div class="row space-up">
 
