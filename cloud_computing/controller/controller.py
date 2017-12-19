@@ -45,3 +45,8 @@ class Controller:
         """
         return Hd.query.join(PlanHd, Hd.model == PlanHd.hd_model) \
             .add_columns(PlanHd.quantity).filter(plan_id == PlanHd.plan_id)
+
+    @staticmethod
+    def search_plan(search_input):
+        """Searches for plans that match 'search_input' on the database."""
+        return Plan.query.whooshee_search(search_input).filter_by(is_public=True)

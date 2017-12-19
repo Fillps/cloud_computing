@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "cbcfd2730f7ba5f015e8e3606084e91c5ce6aefd78a9122aaf353a0d1f0e50c2"
+            "sha256": "bd022c614f32da5be84caef61e6bbea13696a8c7c5795db730d7c8557e68ee64"
         },
         "host-environment-markers": {
             "implementation_name": "cpython",
@@ -104,6 +104,12 @@
                 "sha256:5971b9852b5888655f11db634e87725a9031e170f37c0ce7851cf83497f56e53"
             ],
             "version": "==2.3.2"
+        },
+        "flask-whooshee": {
+            "hashes": [
+                "sha256:625d0c7ad7693fa96c0e3e4dedd5e271edf4a2fe155a1f61ae38e734ef31c25a"
+            ],
+            "version": "==0.5.0"
         },
         "flask-wtf": {
             "hashes": [
@@ -234,6 +240,14 @@
                 "sha256:6246e5fc98a505824113fb6aca993d45ea284a2bcffdc2c65d0c538e53e4abd3"
             ],
             "version": "==0.13"
+        },
+        "whoosh": {
+            "hashes": [
+                "sha256:aa39c3c3426e3fd107dcb4bde64ca1e276a65a889d9085a6e4b54ba82420a852",
+                "sha256:7ca5633dbfa9e0e0fa400d3151a8a0c4bec53bd2ecedc0a67705b17565c31a83",
+                "sha256:e0857375f63e9041e03fedd5b7541f97cf78917ac1b6b06c1fcc9b45375dda69"
+            ],
+            "version": "==2.7.4"
         },
         "wtforms": {
             "hashes": [

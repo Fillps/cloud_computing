@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 import warnings
 from flask import Flask
 from flask_admin import Admin
@@ -8,7 +9,7 @@ from flask_security import user_registered
 from flask_babelex import Babel
 
 from cloud_computing.utils.db_setup import setup_database_data
-from cloud_computing.model.database import db, user_datastore
+from cloud_computing.model.database import db, user_datastore, whooshee
 from cloud_computing.model import models
 from cloud_computing.view import admin as _adm, end_user as _user
 from cloud_computing.view.register import ExtendedRegisterForm
@@ -144,6 +145,10 @@ class AppFactory:
     def __config_database_and_security(self):
         db.init_app(self.app)
         self.__config_flask_security()
+
+        self.app.config['WHOOSHEE_MIN_STRING_LEN'] = 1
+        whooshee.init_app(self.app)
+
         setup_database_data(self.app)
 
     def __config_flask_security(self):
