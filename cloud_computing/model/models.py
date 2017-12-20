@@ -11,7 +11,6 @@ from sqlalchemy.orm import validates, Session
 from cloud_computing.model.database import db, whooshee
 from cloud_computing.utils.form_utils import add_months
 
-
 # Create a table to support many-to-many relationship between Users and Roles
 roles_users = db.Table(
     'roles_users',
@@ -126,7 +125,7 @@ def plan_after_insert(maper, connection, target):
         values['price'] = target.calculate_price()
     if values:
         connection.execute(Plan.__table__.update()
-                           .where(Plan.__table__.c.id==target.id)
+                           .where(Plan.__table__.c.id == target.id)
                            .values(**values))
 
 
@@ -226,6 +225,13 @@ class PlanGpu(db.Model, PlanResource):
     def __str__(self):
         return self.gpu.model + ' x ' + str(self.quantity)
 
+    @validates('gpu')
+    def update_gpu(self, key, value):
+        if self.gpu is None or self.gpu == value:
+            return value
+        raise ValidationError("Não é possível alterar o modelo da GPU. "
+                              "Delete esse componente e crie outro.")
+
 
 class PlanRam(db.Model, PlanResource):
     backref_plan = 'plan_rams'
@@ -236,6 +242,13 @@ class PlanRam(db.Model, PlanResource):
     def __str__(self):
         return self.ram.model + ' x ' + str(self.quantity)
 
+    @validates('ram')
+    def update_ram(self, key, value):
+        if self.ram is None or self.ram == value:
+            return value
+        raise ValidationError("Não é possível alterar o modelo da RAM. "
+                              "Delete esse componente e crie outro.")
+
 
 class PlanHd(db.Model, PlanResource):
     backref_plan = 'plan_hds'
@@ -245,6 +258,13 @@ class PlanHd(db.Model, PlanResource):
 
     def __str__(self):
         return self.hd.model + ' x ' + str(self.quantity)
+
+    @validates('hd')
+    def update_hd(self, key, value):
+        if self.hd is None or self.hd == value:
+            return value
+        raise ValidationError("Não é possível alterar o modelo do HD. "
+                              "Delete esse componente e crie outro.")
 
 
 @event.listens_for(PlanGpu, 'after_insert')
@@ -312,7 +332,7 @@ def purchase_after_insert(maper, connection, target):
             session.add(user_plan)
         else:
             connection.execute(UserPlan.__table__.update()
-                               .where(UserPlan.__table__.c.id==target.user_plan_id)
+                               .where(UserPlan.__table__.c.id == target.user_plan_id)
                                .values(end_date=add_months(target.user_plan.end_date, target.plan.duration_months)))
 
 
@@ -409,6 +429,13 @@ class ServerGpu(db.Model, ServerResource):
     def __str__(self):
         return self.gpu.model + ' x ' + str(self.quantity)
 
+    @validates('gpu')
+    def update_gpu(self, key, value):
+        if self.gpu is None or self.gpu == value:
+            return value
+        raise ValidationError("Não é possível alterar o modelo da GPU. "
+                              "Delete esse componente e crie outro.")
+
     @validates('quantity')
     def update_quantity(self, key, value):
         """
@@ -485,6 +512,13 @@ class ServerRam(db.Model, ServerResource):
 
     def __str__(self):
         return self.ram.model + ' x ' + str(self.quantity)
+
+    @validates('ram')
+    def update_ram(self, key, value):
+        if self.ram is None or self.ram == value:
+            return value
+        raise ValidationError("Não é possível alterar o modelo da RAM. "
+                              "Delete esse componente e crie outro.")
 
     @validates('quantity')
     def update_quantity(self, key, value):
@@ -569,6 +603,13 @@ class ServerHd(db.Model, ServerResource):
 
     def __str__(self):
         return self.hd.model + ' x ' + str(self.quantity)
+
+    @validates('hd')
+    def update_hd(self, key, value):
+        if self.hd is None or self.hd == value:
+            return value
+        raise ValidationError("Não é possível alterar o modelo do HD. "
+                              "Delete esse componente e crie outro.")
 
     @validates('quantity')
     def update_quantity(self, key, value):
@@ -677,7 +718,7 @@ class UserPlan(db.Model):
 @event.listens_for(UserPlan, 'after_insert')
 def purchase_after_insert(maper, connection, target):
     connection.execute(Purchase.__table__.update()
-                       .where(Purchase.__table__.c.id==target.first_purchase_id)
+                       .where(Purchase.__table__.c.id == target.first_purchase_id)
                        .values(user_plan_id=target.id))
 
 
