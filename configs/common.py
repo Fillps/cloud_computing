@@ -24,3 +24,6 @@ SQLALCHEMY_TRACK_MODIFICATIONS = False
 # Custom pages
 SECURITY_LOGIN_USER_TEMPLATE = 'login.html'
 SECURITY_REGISTER_USER_TEMPLATE = 'register.html'
+
+# flask-admin theme
+FLASK_ADMIN_SWATCH = 'flatly'
