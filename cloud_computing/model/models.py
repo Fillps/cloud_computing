@@ -427,7 +427,7 @@ class ServerGpu(db.Model, ServerResource):
     gpu = db.relationship('Gpu', backref=db.backref(backref_plan))
 
     def __str__(self):
-        return self.gpu.model + ' x ' + str(self.quantity)
+        return '%s x%s(%s/%s)' % (self.gpu.model, self.quantity, self.available_capacity, self.total_capacity)
 
     @validates('gpu')
     def update_gpu(self, key, value):

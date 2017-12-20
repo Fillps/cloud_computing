@@ -300,8 +300,8 @@ class HdAdmin(ComponentAdmin):
 
 
 class ServerAdmin(AdminView):
-    column_list = ['id', 'cpu', 'cores_available', 'gpu_slot_available', 'server_gpus', 'ram_slot_available', 'ram_max',
-                   'ram_total', 'ram_available', 'hd_slot_available', 'hd_total', 'hd_available', 'ssd_total', 'ssd_available', 'os']
+    column_list = ['id', 'cpu', 'cores_available', 'gpu_slot_available', 'server_gpus', 'ram_slot_available', 'ram_available', 'hd_slot_available',
+                   'hd_available', 'ssd_available', 'os']
     form_columns = ['cpu', 'gpu_slot_total', 'ram_slot_total', 'ram_max', 'hd_slot_total', 'os']
 
     inline_models = [(ServerGpu,
@@ -313,6 +313,54 @@ class ServerAdmin(AdminView):
                      (ServerHd,
                       dict(form_columns=['server_id', 'hd_model', 'hd', 'quantity'],
                            column_labels=dict(quantity='Quantidade', hd='HD')))]
+
+    column_labels = dict(
+        id='Id',
+        cpu='CPU',
+        cores_available='Núcleos',
+        gpu_slot_available='GPU Slots',
+        server_gpus='GPUs',
+        ram_slot_available='RAM Slots',
+        ram_available='RAM Disponível',
+        hd_slot_available='HD Slots',
+        hd_available='HD Disponível',
+        ssd_available='SSD Disponível',
+        os='OS',
+        gpu_slot_total='Total de Slots de GPU',
+        ram_slot_total='Total de Slots de RAM',
+        hd_slot_total='Total de Slots de HD',
+        ram_max='Capacidade Máxima de RAM (GB)'
+    )
+    def _cores_formatter(self, context, model, name):
+        return '%s/%s' % (model.cores_available, model.cpu.cores)
+
+    def _gpu_slot_formatter(self, context, model, name):
+        return '%s/%s' % (model.gpu_slot_available,  model.gpu_slot_total)
+
+    def _ram_slot_formatter(self, context, model, name):
+        return '%s/%s' % (model.ram_slot_available,  model.ram_slot_total)
+
+    def _hd_slot_formatter(self, context, model, name):
+        return '%s/%s' % (model.hd_slot_available,  model.hd_slot_total)
+
+    def _ram_formatter(view, context, model, name):
+        return '%s/%s(%s) GB' % (str(model.ram_available), str(model.ram_total), str(model.ram_max))
+
+    def _hd_formatter(view, context, model, name):
+        return '%s/%s GB' % (str(model.hd_available), str(model.hd_total))
+
+    def _ssd_formatter(view, context, model, name):
+        return '%s/%s GB' % (str(model.ssd_available), str(model.ssd_total))
+
+    column_formatters = dict(
+        cores_available=_cores_formatter,
+        gpu_slot_available=_gpu_slot_formatter,
+        ram_slot_available=_ram_slot_formatter,
+        hd_slot_available=_hd_slot_formatter,
+        ram_available=_ram_formatter,
+        hd_available=_hd_formatter,
+        ssd_available=_ssd_formatter
+    )
 
     def on_model_delete(self, model):
         if model.cpu.cores != model.cores_available:
