@@ -18,7 +18,6 @@ psycopg2 = "*"
 gunicorn = "*"
 python-slugify = "*"
 pygal = "*"
-flask-whooshee = "*"
 
 [dev-packages]
 

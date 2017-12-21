@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "bd022c614f32da5be84caef61e6bbea13696a8c7c5795db730d7c8557e68ee64"
+            "sha256": "cbcfd2730f7ba5f015e8e3606084e91c5ce6aefd78a9122aaf353a0d1f0e50c2"
         },
         "host-environment-markers": {
             "implementation_name": "cpython",
@@ -104,12 +104,6 @@
                 "sha256:5971b9852b5888655f11db634e87725a9031e170f37c0ce7851cf83497f56e53"
             ],
             "version": "==2.3.2"
-        },
-        "flask-whooshee": {
-            "hashes": [
-                "sha256:625d0c7ad7693fa96c0e3e4dedd5e271edf4a2fe155a1f61ae38e734ef31c25a"
-            ],
-            "version": "==0.5.0"
         },
         "flask-wtf": {
             "hashes": [
@@ -241,14 +235,6 @@
             ],
             "version": "==0.13"
         },
-        "whoosh": {
-            "hashes": [
-                "sha256:aa39c3c3426e3fd107dcb4bde64ca1e276a65a889d9085a6e4b54ba82420a852",
-                "sha256:7ca5633dbfa9e0e0fa400d3151a8a0c4bec53bd2ecedc0a67705b17565c31a83",
-                "sha256:e0857375f63e9041e03fedd5b7541f97cf78917ac1b6b06c1fcc9b45375dda69"
-            ],
-            "version": "==2.7.4"
-        },
         "wtforms": {
             "hashes": [
                 "sha256:ffdf10bd1fa565b8233380cb77a304cd36fd55c73023e91d4b803c96bc11d46f"
@@ -280,10 +266,10 @@
         },
         "faker": {
             "hashes": [
-                "sha256:f5529ff519a4bed0c0c8ccbbf7ca0d918ed0a9826fe8adc60f58d5b052a946dc",
-                "sha256:bf7dabcd6807c8829da28a4de491adf7998af506b8571db6a6eb58161157248a"
+                "sha256:2f6ccc9da046d4cd20401734cf6a1ac73a4e4d8256e7b283496ee6827ad2eb60",
+                "sha256:e928cf853ef69d7471421f2a3716a1239e43de0fa9855f4016ee0c9f1057328a"
             ],
-            "version": "==0.8.7"
+            "version": "==0.8.8"
         },
         "flask": {
             "hashes": [

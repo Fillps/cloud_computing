@@ -8,7 +8,7 @@ from sqlalchemy import func, event
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import validates, Session
 
-from cloud_computing.model.database import db, whooshee
+from cloud_computing.model.database import db
 from cloud_computing.utils.form_utils import add_months
 
 
@@ -57,7 +57,6 @@ class User(db.Model, UserMixin):
         return self.email
 
 
-@whooshee.register_model('title')
 class Plan(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.Text, unique=True, default='Customizado')
