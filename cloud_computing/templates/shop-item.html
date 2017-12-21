@@ -25,8 +25,10 @@
             {% elif current_user.has_role('end-user')%}
             <a href="{{ url_for('create-custom-plan.create_view') }}" class="list-group-item">Criar Plano Personalizado</a>
             <a href="{{ url_for('available-resources.index_view') }}" class="list-group-item">Recursos Disponíveis</a>
+            <a href="{{ url_for('purchase.create_view') }}" class="list-group-item">Contratar Plano</a>
             {% else %}
             <a href="{{ url_for('available-resources.index_view') }}" class="list-group-item">Recursos Disponíveis</a>
+            <a href="{{ url_for('security.login') }}" class="list-group-item">Contratar Plano</a>
             {% endif %}
         </div>
          </div>
