@@ -6,11 +6,18 @@
       <div class="row">
 
         <div class="col-lg-3">
+
           <h1 class="my-4">Planos disponíveis</h1>
-          <div class="list-group">
-            <a href="#" class="list-group-item active">Planos</a>
-            <a href="#" class="list-group-item">Recursos</a>
-          </div>
+
+          <form class="navbar-form" action="{{ url_for('default.search_elements') }}" role="form" method="POST" name="search-form">
+            <div class="input-group add-on">
+              <input class="form-control" placeholder="Pesquisar" name="search-box" type="text" required>
+              <div class="input-group-btn">
+                <button class="btn btn-default search-button" type="submit"><i class="fa fa-search"></i></button>
+              </div>
+            </div>
+          </form>
+
         </div>
 
         <div class="col-lg-9">
@@ -20,9 +27,84 @@
             <div class="card mt-4">
               <img class="card-img-top img-fluid" src="{{ plan.hero_image }}" alt="">
               <div class="card-body">
-                <h3 class="card-title">{{ plan.title }}</h3>
-                <h4>R${{ plan.price }}</h4>
+
+                <h2 class="card-title">{{ plan.title }}</h2>
+                <h4>R$ {{ plan.price }}</h4>
+                <h5>
+                  Duração: {{ plan.duration_months }} {% if plan.duration_months == 1 %} mês {% else %} meses {% endif %}
+                </h5>
+
+                <br>
                 <p class="card-text">{{ plan.shop_description }}</p>
+                <br>
+
+                <p class="card-text">Recursos disponíveis no plano:</p>
+                <p class="card-text">
+                  <ul>
+
+                    <li>Sistema operacional: {{ plan.os_name }}</li>
+
+                    <li>CPU:</li>
+                      <ul>
+                        <li>Modelo: {{ plan.cpu_model }}</li>
+                        <li>Núcleos: {{ plan.cpu.cores }}</li>
+                        <li>Frequência: {{ plan.cpu.frequency }} GHz</li>
+                      </ul>
+
+                    {% if gpu_list.count() > 0 %}
+
+                    <li>GPUs:</li>
+                    <ul>
+                      {% for pair in gpu_list %}
+
+                      <li>Modelo: {{ pair.Gpu.model }}</li>
+                      <ul>
+                        <li>Frequência: {{ pair.Gpu.frequency }} GHz</li>
+                        <li>Memória dedicada: {{ pair.Gpu.ram }} GB</li>
+                        <li>Unidades: {{ pair.quantity }}</li>
+                      </ul>
+
+                      {% endfor %}
+                    </ul>
+
+                    {% endif %}
+
+                    {% if ram_list.count() > 0 %}
+
+                    <li>Memórias RAM:</li>
+                    <ul>
+                      {% for pair in ram_list %}
+
+                      <li>Modelo: {{ pair.Ram.model }}</li>
+                      <ul>
+                        <li>Capacidade: {{ pair.Ram.capacity }} GB</li>
+                        <li>Unidades: {{ pair.quantity }}</li>
+                      </ul>
+
+                      {% endfor %}
+                    </ul>
+
+                    {% endif %}
+
+                    {% if hd_list.count() > 0 %}
+
+                    <li>HDs:</li>
+                    <ul>
+                      {% for pair in hd_list %}
+
+                      <li>Modelo: {{ pair.Hd.model }}</li>
+                      <ul>
+                        <li>Capacidade: {{ pair.Hd.capacity }} GB</li>
+                        <li>SSD: {% if pair.Hd.is_ssd %} Sim {% else %} Não {% endif %}</li>
+                        <li>Unidades: {{ pair.quantity }}</li>
+                      </ul>
+
+                      {% endfor %}
+                    </ul>
+
+                    {% endif %}
+                  </ul>
+                </p>
               </div>
             </div>
 

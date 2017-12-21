@@ -5,4 +5,5 @@ cloud_computing.egg-info/
 **/__pycache__/
 **/.idea/
 **/*.pyc
+**/whooshee/
 .env
