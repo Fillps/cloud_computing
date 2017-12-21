@@ -3,14 +3,14 @@
 import inspect
 import pytest
 
-from cloud_computing import create_app
+from cloud_computing.app_factory import AppFactory
 from cloud_computing.model.database import db as _db
 from . import factories
 
 
 @pytest.yield_fixture(scope='session')
 def app():
-    app = create_app('../configs/local_test_postgres.py')
+    app = AppFactory('../configs/local_test_postgres.py').get_app()
     ctx = app.app_context()
     ctx.push()
     yield app
@@ -66,8 +66,52 @@ def user_data(session):
 
 
 @pytest.fixture()
+def cpu_data(session):
+    return factories.CpuFactory.create_batch(1)
+
+
+@pytest.fixture()
+def gpu_data(session):
+    return factories.GpuFactory.create_batch(1)
+
+
+@pytest.fixture()
+def ram_data(session):
+    return factories.RamFactory.create_batch(1)
+
+
+@pytest.fixture()
+def hd_data(session):
+    return factories.HdFactory.create_batch(1)
+
+
+@pytest.fixture()
+def os_data(session):
+    return factories.OsFactory.create_batch(10)
+
+
+@pytest.fixture()
 def plan_data(session):
     return factories.PlanFactory.create_batch(10)
+
+
+@pytest.fixture()
+def server_data(session):
+    return factories.ServerFactory.create_batch(1)
+
+
+@pytest.fixture()
+def server_ram_data(session):
+    return factories.ServerRamFactory.create_batch(1)
+
+
+@pytest.fixture()
+def credit_card_data(session):
+    return factories.CreditCardFactory.create_batch(1)
+
+@pytest.fixture()
+def purchase_data(session):
+    return factories.PurchaseFactory.create_batch(1)
 
 
 @pytest.fixture()
@@ -76,4 +120,4 @@ def api_url_data(session):
     return {
         'item': plans,
         'single_item_name': plans[0].title
-}
+    }

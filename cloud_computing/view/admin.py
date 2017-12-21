@@ -9,9 +9,8 @@ from sqlalchemy import func
 from wtforms import ValidationError, SelectField
 from wtforms.fields import PasswordField, IntegerField
 
-from cloud_computing.model.models import ResourceRequests
+from cloud_computing.model.models import ResourceRequests, PlanGpu, PlanRam, PlanHd, ServerGpu, ServerRam, ServerHd
 from cloud_computing.utils.form_utils import ReadonlyCKTextAreaField, CKTextAreaField, ReadOnlyIntegerField
-
 
 ADMIN_RESOURCES_REQUEST_MESSAGE_LENGTH = 100
 REMOVE_ID = '2'
@@ -101,21 +100,35 @@ class RoleAdmin(AdminView):
 
 class PlanAdmin(AdminView):
     column_list = ['title', 'auto_price', 'price', 'duration_months',
-                   'cpu', 'os', 'gpu', 'ram', 'hd', 'is_public']
+                   'cpu', 'os', 'plan_gpus', 'plan_rams', 'plan_hds', 'is_public']
     column_searchable_list = ['title', 'auto_price', 'duration_months', 'duration_months', 'shop_description',
                               'is_public']
     form_columns = ['title', 'auto_price', 'price', 'duration_months', 'cpu', 'gpu', 'ram',
                     'hd', 'os', 'shop_description', 'thumbnail',
                     'hero_image', 'is_public']
+
+    form_columns = ['title', 'auto_price', 'price', 'duration_months', 'shop_description', 'thumbnail',
+                    'hero_image', 'is_public', 'cpu', 'os', ]
+
+    inline_models = [(PlanGpu,
+                      dict(form_columns=['plan_id', 'gpu_model', 'gpu', 'quantity'],
+                           column_labels=dict(quantity='Quantidade', gpu='GPU'))),
+                     (PlanRam,
+                      dict(form_columns=['plan_id', 'ram_model', 'ram', 'quantity'],
+                           column_labels=dict(quantity='Quantidade', ram='RAM'))),
+                     (PlanHd,
+                      dict(form_columns=['plan_id', 'hd_model', 'hd', 'quantity'],
+                           column_labels=dict(quantity='Quantidade', hd='HD')))]
+
     column_labels = dict(
         title='Título',
         price='Preço',
         duration_months='Duração em meses',
         shop_description='Descrição para a loja',
         cpu='CPU',
-        gpus='GPUs',
-        rams='RAMs',
-        hds='HDs',
+        plan_gpus='GPUs',
+        plan_rams='RAMs',
+        plan_hds='HDs',
         os='OS',
         is_public='É Público?',
         auto_price='Preço automático?')
@@ -285,61 +298,88 @@ class HdAdmin(ComponentAdmin):
         price=dict(validators=[ComponentAdmin.bigger_than_zero]))
 
 
-# TODO All the editing of a server should be in one screen
 class ServerAdmin(AdminView):
-    column_list = ['id', 'cpu', 'cores_available', 'gpu_slot_available', 'server_gpus', 'ram_slot_available', 'ram_max', 'ram_total',
-                   'ram_available', 'hd_slot_available', 'hd_total', 'hd_available', 'ssd_total', 'ssd_available', 'os']
+    column_list = ['id', 'cpu', 'cores_available', 'gpu_slot_available', 'server_gpus', 'ram_slot_available', 'ram_available', 'hd_slot_available',
+                   'hd_available', 'ssd_available', 'os']
     form_columns = ['cpu', 'gpu_slot_total', 'ram_slot_total', 'ram_max', 'hd_slot_total', 'os']
 
+    inline_models = [(ServerGpu,
+                      dict(form_columns=['server_id', 'gpu_model', 'gpu', 'quantity'],
+                           column_labels=dict(quantity='Quantidade', gpu='GPU'))),
+                     (ServerRam,
+                      dict(form_columns=['server_id', 'ram_model', 'ram', 'quantity'],
+                           column_labels=dict(quantity='Quantidade', ram='RAM'))),
+                     (ServerHd,
+                      dict(form_columns=['server_id', 'hd_model', 'hd', 'quantity'],
+                           column_labels=dict(quantity='Quantidade', hd='HD')))]
 
-class ServerComponentAdmin(AdminView):
-    form_edit_rules = ['quantity', 'addOrRemove', 'add_quantity']
-    form_overrides = {
-        'quantity': ReadOnlyIntegerField
-    }
+    column_labels = dict(
+        id='Id',
+        cpu='CPU',
+        cores_available='Núcleos',
+        gpu_slot_available='GPU Slots',
+        server_gpus='GPUs',
+        ram_slot_available='RAM Slots',
+        ram_available='RAM Disponível',
+        hd_slot_available='HD Slots',
+        hd_available='HD Disponível',
+        ssd_available='SSD Disponível',
+        os='OS',
+        gpu_slot_total='Total de Slots de GPU',
+        ram_slot_total='Total de Slots de RAM',
+        hd_slot_total='Total de Slots de HD',
+        ram_max='Capacidade Máxima de RAM (GB)'
+    )
+    def _cores_formatter(self, context, model, name):
+        return '%s/%s' % (model.cores_available, model.cpu.cores)
 
-    def bigger_than_zero(form, field):
-        if field.data <= 0:
-            raise ValidationError("Esse campo precisa ser maior que zero.")
+    def _gpu_slot_formatter(self, context, model, name):
+        return '%s/%s' % (model.gpu_slot_available,  model.gpu_slot_total)
 
-    form_args = dict(
-        add_quantity=dict(validators=[bigger_than_zero]))
+    def _ram_slot_formatter(self, context, model, name):
+        return '%s/%s' % (model.ram_slot_available,  model.ram_slot_total)
 
-    def scaffold_form(self):
-        """Overrides the scaffold_form function. Adds the add_quantity field to the form."""
-        form_class = super(ServerComponentAdmin, self).scaffold_form()
+    def _hd_slot_formatter(self, context, model, name):
+        return '%s/%s' % (model.hd_slot_available,  model.hd_slot_total)
 
-        form_class.addOrRemove = SelectField("Selecione", choices=[(ADD_ID, 'Adicionar'), (REMOVE_ID, 'Remover')])
-        form_class.add_quantity = IntegerField('Quantidade')
+    def _ram_formatter(view, context, model, name):
+        return '%s/%s(%s) GB' % (str(model.ram_available), str(model.ram_total), str(model.ram_max))
 
-        return form_class
+    def _hd_formatter(view, context, model, name):
+        return '%s/%s GB' % (str(model.hd_available), str(model.hd_total))
 
-    def on_model_change(self, form, model, is_created):
-        """Adds the add_quantity field to the model quantity."""
-        if form.addOrRemove.data == REMOVE_ID:
-            model.add_quantity = - model.add_quantity
-        model.quantity += model.add_quantity
+    def _ssd_formatter(view, context, model, name):
+        return '%s/%s GB' % (str(model.ssd_available), str(model.ssd_total))
 
+    column_formatters = dict(
+        cores_available=_cores_formatter,
+        gpu_slot_available=_gpu_slot_formatter,
+        ram_slot_available=_ram_slot_formatter,
+        hd_slot_available=_hd_slot_formatter,
+        ram_available=_ram_formatter,
+        hd_available=_hd_formatter,
+        ssd_available=_ssd_formatter
+    )
 
-class ServerGpuAdmin(ServerComponentAdmin):
-    form_columns = ['server', 'gpu', 'quantity']
-
-
-class ServerRamAdmin(ServerComponentAdmin):
-    can_create = True
-
-
-class ServerHdAdmin(ServerComponentAdmin):
-    can_create = True
+    def on_model_delete(self, model):
+        if model.cpu.cores != model.cores_available:
+            raise ValidationError("O servidor não pode ser excluido pois o CPU ainda está em uso.")
+        if model.server_gpus:
+            raise ValidationError("O servidor ainda possui GPUs. Remova elas antes.")
+        if model.server_rams:
+            raise ValidationError("O servidor ainda possui Memórias RAM. Remova elas antes.")
+        if model.server_hds:
+            raise ValidationError("O servidor ainda possui HDs. Remova eles antes.")
 
 
 class UserPlanAdmin(AdminView):
     can_create = False
-    can_edit = False
+    can_edit = True
     can_view_details = True
     can_delete = False
-    column_list = ['id', 'plan', 'server', 'start_date', 'end_date', 'time_remaining', 'user_plan_stats']
+    column_list = ['id', 'plan', 'server', 'start_date', 'end_date', 'time_remaining']
     column_details_list = ['id', 'plan', 'server', 'start_date', 'end_date', 'time_remaining', 'user_plan_stats']
+    form_columns = ['server']
 
     column_labels = dict(
         id='Id',

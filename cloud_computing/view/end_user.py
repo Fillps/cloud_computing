@@ -31,6 +31,7 @@ class UserModelView(sqla.ModelView):
 
 class UserPlanView(UserPlanAdmin):
     can_edit = True
+    form_columns = []
     form_excluded_columns = ['id', 'plan', 'server', 'start_date', 'end_date',
                              'user', 'purchases', 'user_servers', 'user_plan_stats']
 
@@ -102,7 +103,7 @@ class PurchaseUser(UserModelView):
         return super(PurchaseUser, self).get_query().filter(Purchase.user_id == current_user.id)
 
     def on_model_change(self, form, model, is_created):
-        model.user_id = current_user.id
+        model.user = current_user
 
 
 class CreditCardUser(UserModelView):

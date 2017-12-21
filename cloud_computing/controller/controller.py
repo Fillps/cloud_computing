@@ -6,10 +6,14 @@ from cloud_computing.model.models import Plan, Gpu, Ram, Hd, PlanGpu, PlanRam, P
 class Controller:
     """Initial implementation of the controller class."""
     @staticmethod
-    def get_plans():
-        """Queries the objects of type Plan on the database."""
-        # TODO Determine the order of the list to show on front-end
-        return Plan.query.filter_by(is_public=True)
+    def get_available_plans():
+        """Queries the objects of type Plan on the database and ."""
+        available_plans = []
+        plans = Plan.query.filter_by(is_public=True).order_by(Plan.price)
+        for plan in plans:
+            if plan.available_servers(only_one=True) is not None:
+                available_plans.append(plan)
+        return available_plans
 
     @staticmethod
     def get_plan_by_slug_url(slug_url):
