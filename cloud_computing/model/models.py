@@ -60,7 +60,7 @@ class User(db.Model, UserMixin):
 class Plan(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.Text, unique=True, default='Customizado')
-    price = db.Column(db.Float(), nullable=False)
+    price = db.Column(db.Float(), default=0, nullable=False)
     duration_months = db.Column(db.Integer, nullable=False)
     cpu_model = db.Column(db.Text, db.ForeignKey('cpu.model'), nullable=False)
     os_name = db.Column(db.Text, db.ForeignKey('os.name'), nullable=False)
@@ -284,6 +284,16 @@ class PlanGpu(db.Model, PlanResource):
     gpu_model = db.Column(db.Text, db.ForeignKey('gpu.model'), primary_key=True)
     gpu = db.relationship('Gpu', backref=db.backref('plan_gpu'))
 
+    def __str__(self):
+        return self.gpu.model + ' x ' + str(self.quantity)
+
+    @validates('gpu')
+    def update_gpu(self, key, value):
+        if self.gpu is None or self.gpu == value:
+            return value
+        raise ValidationError("Não é possível alterar o modelo da GPU. "
+                              "Delete esse componente e crie outro.")
+
 
 class PlanRam(db.Model, PlanResource):
     backref_plan = 'plan_rams'
@@ -291,12 +301,32 @@ class PlanRam(db.Model, PlanResource):
     ram_model = db.Column(db.Text, db.ForeignKey('ram.model'), primary_key=True)
     ram = db.relationship('Ram', backref=db.backref('plan_ram'))
 
+    def __str__(self):
+        return self.ram.model + ' x ' + str(self.quantity)
+
+    @validates('ram')
+    def update_ram(self, key, value):
+        if self.ram is None or self.ram == value:
+            return value
+        raise ValidationError("Não é possível alterar o modelo da RAM. "
+                              "Delete esse componente e crie outro.")
+
 
 class PlanHd(db.Model, PlanResource):
     backref_plan = 'plan_hds'
 
     hd_model = db.Column(db.Text, db.ForeignKey('hd.model'), primary_key=True)
     hd = db.relationship('Hd', backref=db.backref('plan_hd'))
+
+    def __str__(self):
+        return self.hd.model + ' x ' + str(self.quantity)
+
+    @validates('hd')
+    def update_hd(self, key, value):
+        if self.hd is None or self.hd == value:
+            return value
+        raise ValidationError("Não é possível alterar o modelo do HD. "
+                              "Delete esse componente e crie outro.")
 
 
 @event.listens_for(PlanGpu, 'after_insert')
@@ -502,6 +532,16 @@ class ServerGpu(db.Model, ServerResource):
 
     gpu = db.relationship('Gpu', backref=db.backref(backref_plan))
 
+    def __str__(self):
+        return '%s x%s(%s/%s)' % (self.gpu.model, self.quantity, self.available_capacity, self.total_capacity)
+
+    @validates('gpu')
+    def update_gpu(self, key, value):
+        if self.gpu is None or self.gpu == value:
+            return value
+        raise ValidationError("Não é possível alterar o modelo da GPU. "
+                              "Delete esse componente e crie outro.")
+
     @validates('quantity')
     def update_quantity(self, key, value):
         """
@@ -510,7 +550,7 @@ class ServerGpu(db.Model, ServerResource):
         """
         if value < 0:
             raise ValidationError('A quantidade precisa ser maior que zero.')
-        elif self.server_id is None:
+        elif self.quantity is None:
             return value
         elif self.gpu.available < value - self.quantity:
             raise ValidationError(
@@ -519,7 +559,7 @@ class ServerGpu(db.Model, ServerResource):
             raise ValidationError(
                 "Não existem slots disponíveis. Tente diminuir a quantidade de recursos.")
 
-        net_capacity = self.gpu.ram * value - self.gpu.ram * self.quantity
+        net_capacity = self.gpu.ram * (value - self.quantity)
 
         if self.available_capacity + net_capacity < 0:
             raise ValidationError(
@@ -565,7 +605,7 @@ def server_gpu_before_delete(maper, connection, target):
     else:
         connection.execute(Server.__table__.update()
                            .where(Server.__table__.c.id == target.server_id)
-                           .values(gpu_slot_available=target.server.ram_slots_available + target.quantity))
+                           .values(gpu_slot_available=target.server.ram_slot_available + target.quantity))
         connection.execute(Gpu.__table__.update()
                            .where(Gpu.__table__.c.model == target.gpu_model)
                            .values(available=target.gpu.available + target.quantity))
@@ -576,6 +616,16 @@ class ServerRam(db.Model, ServerResource):
     ram_model = db.Column(db.Text, db.ForeignKey('ram.model'), primary_key=True)
     ram = db.relationship('Ram', backref=db.backref(backref_plan))
 
+    def __str__(self):
+        return self.ram.model + ' x ' + str(self.quantity)
+
+    @validates('ram')
+    def update_ram(self, key, value):
+        if self.ram is None or self.ram == value:
+            return value
+        raise ValidationError("Não é possível alterar o modelo da RAM. "
+                              "Delete esse componente e crie outro.")
+
     @validates('quantity')
     def update_quantity(self, key, value):
         """When quantity is updated, updates the server.ram_total,
@@ -583,7 +633,7 @@ class ServerRam(db.Model, ServerResource):
         """
         if value < 0:
             raise ValidationError('A quantidade precisa ser maior que zero.')
-        elif self.server_id is None:
+        elif self.quantity is None:
             return value
         elif self.ram.available < value - self.quantity:
             raise ValidationError(
@@ -657,6 +707,16 @@ class ServerHd(db.Model, ServerResource):
     hd_model = db.Column(db.Text, db.ForeignKey('hd.model'), primary_key=True)
     hd = db.relationship('Hd', backref=db.backref(backref_plan))
 
+    def __str__(self):
+        return self.hd.model + ' x ' + str(self.quantity)
+
+    @validates('hd')
+    def update_hd(self, key, value):
+        if self.hd is None or self.hd == value:
+            return value
+        raise ValidationError("Não é possível alterar o modelo do HD. "
+                              "Delete esse componente e crie outro.")
+
     @validates('quantity')
     def update_quantity(self, key, value):
         """ When quantity is updated, updates the server.hd_total,
@@ -665,7 +725,7 @@ class ServerHd(db.Model, ServerResource):
         """
         if value < 0:
             raise ValidationError('A quantidade precisa ser maior que zero.')
-        elif self.server_id is None:
+        elif self.quantity is None:
             return value
         elif self.hd.available < value - self.quantity:
             raise ValidationError(
