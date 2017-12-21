@@ -10,7 +10,7 @@ default_blueprint = Blueprint('default', __name__)
 @default_blueprint.route('/')
 def show_homescreen():
     """Shows the homescreen."""
-    plans = Controller.get_plans()
+    plans = Controller.get_available_plans()
 
     return render_template('shop-homepage.html', plans=plans)
 
