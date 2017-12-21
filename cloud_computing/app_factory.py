@@ -11,13 +11,14 @@ from flask_babelex import Babel
 from cloud_computing.utils.db_setup import setup_database_data
 from cloud_computing.model.database import db, user_datastore
 from cloud_computing.model import models
-from cloud_computing.view import admin as _adm, end_user as _user
+from cloud_computing.view import admin as _adm, end_user as _user, unregistered_user as _unreg_user
 from cloud_computing.view.register import ExtendedRegisterForm
 from cloud_computing.view.view import default_blueprint
 
 
 class AppFactory:
     """Builds the app."""
+
     def __init__(self, config_filename='../configs/production.py'):
         self.app = Flask(__name__)
 
@@ -123,6 +124,18 @@ class AppFactory:
         admin.add_view(_user.UserModelView(
             models.UserPlanStats,
             db.session))
+
+        admin.add_view(_unreg_user.PlanUnregistered(
+            models.Plan,
+            db.session,
+            name='Criar Plano Personalizado',
+            endpoint='create-custom-plan'))
+        admin.add_view(_unreg_user.ResourcesAvailable(
+            models.Server,
+            db.session,
+            name='Recursos Disponíveis',
+            endpoint='available-resources'))
+
 
     def __config_database_and_security(self):
         db.init_app(self.app)
