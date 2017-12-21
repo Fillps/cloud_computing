@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
+from sqlalchemy import or_
 
-from cloud_computing.model.models import Plan, Gpu, Ram, Hd, PlanGpu, PlanRam, PlanHd
+from cloud_computing.model.models import Plan, Gpu, Ram, Hd, PlanGpu, PlanRam, PlanHd, Server
 
 
 class Controller:
     """Initial implementation of the controller class."""
+
     @staticmethod
     def get_plans():
         """Queries the objects of type Plan on the database."""
@@ -50,3 +52,73 @@ class Controller:
     def search_plan(search_input):
         """Searches for plans that match 'search_input' on the database."""
         return Plan.query.whooshee_search(search_input).filter_by(is_public=True)
+
+    @staticmethod
+    def get_available_resources():
+        servers = Server.query.filter(Server.cores_available >= 0,
+                                      Server.ram_available >= 0,
+                                      or_(Server.hd_available >= 0,
+                                          Server.ssd_available >= 0))
+        data = []
+        i = 1
+        for server in servers:
+            row = {}
+            server_gpus = ""
+            for gpu in server.server_gpus:
+                server_gpus += gpu.__str__() + ' '
+            row['row'] = i
+            row['cpu'] = server.cpu_model
+            row['cores_available'] = server.cores_available
+            row['server_gpus'] = server_gpus
+            row['ram_available'] = server.ram_available
+            row['hd_available'] = server.hd_available
+            row['ssd_available'] = server.ssd_available
+            row['os'] = server.os_name
+            data.append(row)
+            i += 1
+
+        # other column settings -> http://bootstrap-table.wenzhixin.net.cn/documentation/#column-options
+        columns = [
+            {
+                "field": "row",  # which is the field's name of data key
+                "title": "Opção",  # display as the table header's name
+                "sortable": True,
+            },
+            {
+                "field": "cpu",  # which is the field's name of data key
+                "title": "CPU",  # display as the table header's name
+                "sortable": True,
+            },
+            {
+                "field": "cores_available",
+                "title": "Núcleos disponíveis",
+                "sortable": True,
+            },
+            {
+                "field": "server_gpus",
+                "title": "GPUs",
+                "sortable": True,
+            },
+            {
+                "field": "ram_available",
+                "title": "RAM disponível",
+                "sortable": True,
+            },
+            {
+                "field": "hd_available",
+                "title": "HD disponível",
+                "sortable": True,
+            },
+            {
+                "field": "ssd_available",
+                "title": "SSD disponível",
+                "sortable": True,
+            },
+            {
+                "field": "os",
+                "title": "OS",
+                "sortable": True,
+            }
+        ]
+
+        return data, columns

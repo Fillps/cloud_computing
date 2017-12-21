@@ -1,0 +1,104 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta name="robots" content="noindex">
+  <title>Bootstrap Table - Flask example </title>
+  <script
+  src="https://code.jquery.com/jquery-2.2.4.min.js"
+  integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44="
+  crossorigin="anonymous"></script>
+  <script type="text/javascript" src="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+  <link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+  <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.11.1/bootstrap-table.min.css">
+  <script type='text/javascript' src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.11.1/bootstrap-table.min.js"></script>
+  <style type='text/css'>
+    .row-index {
+      width: 50px;
+      display: inline-block;
+    }
+  </style>
+
+  <script type='text/javascript'>
+    $(window).load(function(){
+      var data = {{data|tojson}};
+      var columns = {{columns|tojson}};
+      $(function() {
+        $('#table').bootstrapTable({ 
+          data: data,
+          columns: columns,
+        });
+      });
+    });
+  </script>
+
+
+
+
+</head>
+<nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="{{ url_for('default.show_homescreen') }}">Cloud Computing</a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                {% if not current_user.is_anonymous %}
+                  <li class="nav-item" style="float:right;line-height:45px;">
+                    <a class="nav-link" href="{{ url_for('admin.index') }}">Gerenciar</a>
+                  </li>
+                  <li class="nav-item" style="float:right;">
+                    <a class="nav-link" href="{{ url_for_security('logout') }}">Sair</a>
+                  </li>
+                {% else %}
+                  <li class="nav-item" style="float:right;line-height:45px;">
+                    <a class="nav-link" href="{{ url_for_security('login') }}">Entrar</a>
+                  </li>
+                {% endif %}
+            </ul>
+        </div><!--/.nav-collapse -->
+    </div>
+</nav>
+<div class="navigation"><!-- Isso era do site de onde eu copiei onde tinha umas setas
+                             deixei isso aqui pq o titulo estava entrando dentro da barra
+                             mas nao é pra estar aqui.-->
+    <div class="container">
+        <a class="previous" href="#">
+            <i class="glyphicon glyphicon-arrow-left"></i>
+            PREVIOUS: <span></span>
+        </a>
+        <a class="next" href="#">
+            NEXT: <span></span>
+            <i class="glyphicon glyphicon-arrow-right"></i>
+        </a>
+    </div>
+</div>
+<body>
+  <div class="container" style="padding: 10px; ">
+    <h1>{{title}}</h1>
+    <br/>
+    <div id="toolbar"></div>
+    <table
+      id="table"
+      data-toggle="true"
+      data-toolbar="#toolbar"
+      data-search="true"
+      data-show-columns="true"
+      data-pagination="true"
+      data-height="500">
+    </table>
+  </div>
+</body>
+<footer class="py-5 bg-dark space-up">
+    <div class="container">
+      <p class="m-0 text-center text-white">Copyright &copy; Cloud Computing 2017</p>
+    </div>
+  </footer>
+</html>

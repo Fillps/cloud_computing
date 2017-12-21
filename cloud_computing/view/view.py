@@ -40,3 +40,14 @@ def search_elements():
     results = Controller.search_plan(search_input)
 
     return render_template('shop-search-results.html', results=results)
+
+
+@default_blueprint.route('/available-resources')
+def available_resources():
+    data, columns = Controller.get_available_resources()
+
+    return render_template('shop-available-resources.html',
+                           data=data,
+                           columns=columns,
+                           title="Recursos Disponíveis")
+
