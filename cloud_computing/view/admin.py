@@ -12,7 +12,6 @@ from wtforms.fields import PasswordField, IntegerField
 from cloud_computing.model.models import ResourceRequests, PlanGpu, PlanRam, PlanHd, ServerGpu, ServerRam, ServerHd
 from cloud_computing.utils.form_utils import ReadonlyCKTextAreaField, CKTextAreaField, ReadOnlyIntegerField
 
-
 ADMIN_RESOURCES_REQUEST_MESSAGE_LENGTH = 100
 REMOVE_ID = '2'
 ADD_ID = '1'
@@ -375,11 +374,12 @@ class ServerAdmin(AdminView):
 
 class UserPlanAdmin(AdminView):
     can_create = False
-    can_edit = False
+    can_edit = True
     can_view_details = True
     can_delete = False
-    column_list = ['id', 'plan', 'server', 'start_date', 'end_date', 'time_remaining', 'user_plan_stats']
+    column_list = ['id', 'plan', 'server', 'start_date', 'end_date', 'time_remaining']
     column_details_list = ['id', 'plan', 'server', 'start_date', 'end_date', 'time_remaining', 'user_plan_stats']
+    form_columns = ['server']
 
     column_labels = dict(
         id='Id',
