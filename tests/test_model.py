@@ -58,18 +58,22 @@ def test_server_ram_model(server_ram_data):
 def test_server_start_cores(server_data):
     servers = models.Server.query.all()
     sv = servers[0]
+    assert len(servers) == len(server_data)
     assert sv.cores_available == sv.cpu.cores
     
     
 def test_credit_card_model(credit_card_data):
     credit_cards = models.CreditCard.query.all()
     assert len(credit_cards) == len(credit_card_data)
-    
+
+
 def test_purchase_model(purchase_data):
     purchases = models.Purchase.query.all()
-    assert len(purchases) == len(purchase_data)
-
-def test_user_plan_model(purchase_data):
-    purchases = models.Purchase.query.all()
     purchase = purchases[0]
-    assert purchase.user_plan.user_id == purchase.credit_card.user_id
+    assert len(purchases) == len(purchase_data)
+    assert purchase.user_plan is not None
+    assert purchase.user_plan.user == purchase.user
+    assert purchase.user_plan.plan == purchase.plan
+
+
+

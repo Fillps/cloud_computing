@@ -87,7 +87,7 @@ class HdFactory(SQLAlchemyModelFactory):
 
 
 class OsFactory(SQLAlchemyModelFactory):
-    name = factory.Sequence(lambda x: x)
+    name = factory.Sequence(lambda x: str(x))
 
     class Meta:
         model = models.Os
@@ -148,5 +148,3 @@ class PurchaseFactory(SQLAlchemyModelFactory):
 
     class Meta:
         model = models.Purchase
-
-

@@ -290,28 +290,17 @@ class Purchase(db.Model):
     user_plan = db.relationship('UserPlan', backref=db.backref('purchases'), foreign_keys=[user_plan_id])
 
 
-@event.listens_for(Purchase, 'after_insert')
-def purchase_after_insert(maper, connection, target):
+@event.listens_for(Purchase, 'before_insert')
+def purchase_before_insert(maper, connection, target):
     """Creates or updates a UserPlan and updates the end_date by the plan duration_months."""
-    @event.listens_for(Session, "after_flush", once=True)
-    def receive_after_flush(session, context):
-
-        if target.user_plan_id is None:
-            id_purchase = target.id
-            user_plan = UserPlan(user_id=target.user_id, plan_id=target.plan_id)
-            user_plan.end_date = add_months(datetime.datetime.now(), target.plan.duration_months)
-            session.add(user_plan)
-
-            @event.listens_for(UserPlan, 'after_insert')
-            def user_plan_after_insert(maper, connection, target):
-                connection.execute(Purchase.__table__.update()
-                                   .where(Purchase.__table__.c.id == id_purchase)
-                                   .values(user_plan_id=target.id))
-
-        else:
-            connection.execute(UserPlan.__table__.update()
-                               .where(UserPlan.__table__.c.id==target.user_plan_id)
-                               .values(end_date=add_months(target.user_plan.end_date, target.plan.duration_months)))
+    if target.user_plan is None:
+        user_plan = UserPlan(user=target.user, plan=target.plan)
+        user_plan.end_date = add_months(datetime.datetime.now(), target.plan.duration_months)
+        target.user_plan = user_plan
+    else:
+        connection.execute(UserPlan.__table__.update()
+                           .where(UserPlan.__table__.c.id == target.user_plan.id)
+                           .values(end_date=add_months(target.user_plan.end_date, target.plan.duration_months)))
 
 
 class Server(db.Model):
