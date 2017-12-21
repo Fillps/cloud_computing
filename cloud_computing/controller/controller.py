@@ -53,4 +53,4 @@ class Controller:
     @staticmethod
     def search_plan(search_input):
         """Searches for plans that match 'search_input' on the database."""
-        return Plan.query.whooshee_search(search_input).filter_by(is_public=True)
+        return Plan.query.filter(Plan.title.ilike("%" + search_input + "%")).filter_by(is_public=True)
