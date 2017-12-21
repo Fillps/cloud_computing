@@ -96,6 +96,11 @@ class AppFactory:
             endpoint='user-plan-admin',
             category='Servidores'))
 
+        admin.add_view(_user.CustomPlan(
+            models.Plan,
+            db.session,
+            name='Criar Plano Personalizado',
+            endpoint='create-custom-plan'))
         admin.add_view(_user.UserPlanView(
             models.UserPlan,
             db.session,
@@ -119,17 +124,11 @@ class AppFactory:
         admin.add_view(_user.PurchaseUser(
             models.Purchase,
             db.session,
-            category='Conta',
-            name='Compras'))
+            name='Comprar'))
         admin.add_view(_user.UserModelView(
             models.UserPlanStats,
             db.session))
 
-        admin.add_view(_unreg_user.PlanUnregistered(
-            models.Plan,
-            db.session,
-            name='Criar Plano Personalizado',
-            endpoint='create-custom-plan'))
         admin.add_view(_unreg_user.ResourcesAvailable(
             models.Server,
             db.session,

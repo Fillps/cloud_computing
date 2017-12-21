@@ -15,8 +15,7 @@ from wtforms import BooleanField
 
 from cloud_computing.model.models import ResourceRequests, CreditCard, Purchase, UserPlan, User
 from cloud_computing.utils.form_utils import CKTextAreaField
-from cloud_computing.view.admin import UserAdmin, UserPlanAdmin
-
+from cloud_computing.view.admin import UserAdmin, UserPlanAdmin, PlanAdmin
 
 USER_RESOURCES_REQUEST_MESSAGE_LENGTH = 50
 
@@ -26,6 +25,21 @@ class UserModelView(sqla.ModelView):
         """Prevent administration of ResourceRequests unless the currently
         logged-in user has the "end-user" role.
         """
+        return current_user.has_role('end-user')
+
+
+class CustomPlan(PlanAdmin):
+    column_list = ['title', 'price', 'duration_months',
+                   'cpu', 'os', 'plan_gpus', 'plan_rams', 'plan_hds']
+    column_searchable_list = ['title', 'duration_months', 'price']
+
+    form_columns = ['duration_months', 'cpu', 'os']
+
+    can_delete = False
+    can_edit = False
+    can_view_details = True
+
+    def is_accessible(self):
         return current_user.has_role('end-user')
 
 
