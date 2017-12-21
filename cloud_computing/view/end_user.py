@@ -31,6 +31,7 @@ class UserModelView(sqla.ModelView):
 
 class UserPlanView(UserPlanAdmin):
     can_edit = True
+    form_columns = []
     form_excluded_columns = ['id', 'plan', 'server', 'start_date', 'end_date',
                              'user', 'purchases', 'user_servers', 'user_plan_stats']
 

@@ -73,7 +73,7 @@ def setup_development_data(app):
                           price=5.99,
                           total=10)
 
-        if get(db.session, Cpu, model="GPU 4GB 2.0") is None:
+        if get(db.session, Gpu, model="GPU 4GB 2.0") is None:
             get_or_create(db.session, Gpu,
                           model="GPU 4GB 2.0",
                           ram=4,
@@ -81,7 +81,7 @@ def setup_development_data(app):
                           price=3.99,
                           total=10)
 
-        if get(db.session, Cpu, model="GPU 8GB 2.0") is None:
+        if get(db.session, Gpu, model="GPU 8GB 2.0") is None:
             get_or_create(db.session, Gpu,
                           model="GPU 8GB 2.0",
                           ram=8,
@@ -89,28 +89,28 @@ def setup_development_data(app):
                           price=5.99,
                           total=10)
 
-        if get(db.session, Cpu, model="RAM 8GB") is None:
+        if get(db.session, Ram, model="RAM 8GB") is None:
             get_or_create(db.session, Ram,
                           model="RAM 8GB",
                           capacity=8,
                           price=3.99,
                           total=10)
 
-        if get(db.session, Cpu, model="RAM 4GB") is None:
+        if get(db.session, Ram, model="RAM 4GB") is None:
             get_or_create(db.session, Ram,
                           model="RAM 4GB",
                           capacity=4,
                           price=2.99,
                           total=10)
 
-        if get(db.session, Cpu, model="HD 100GB") is None:
+        if get(db.session, Hd, model="HD 100GB") is None:
             get_or_create(db.session, Hd,
                           model="HD 100GB",
                           capacity=100,
                           price=3.99,
                           total=10)
 
-        if get(db.session, Cpu, model="HD 500GB") is None:
+        if get(db.session, Hd, model="HD 500GB") is None:
             get_or_create(db.session, Hd,
                           model="HD 500GB",
                           capacity=500,
