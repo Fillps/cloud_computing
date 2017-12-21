@@ -44,7 +44,7 @@ class UserFactory(SQLAlchemyModelFactory):
 
 
 class CpuFactory(SQLAlchemyModelFactory):
-    model = factory.Sequence(lambda x:x)
+    model = factory.Sequence(lambda x: x)
     cores = 4
     frequency = 2.0
     price = 5.99
@@ -56,7 +56,7 @@ class CpuFactory(SQLAlchemyModelFactory):
 
 
 class GpuFactory(SQLAlchemyModelFactory):
-    model = factory.Sequence(lambda x:x)
+    model = factory.Sequence(lambda x: x)
     frequency = 2.0
     ram = 4
     price = 3.99
@@ -67,7 +67,7 @@ class GpuFactory(SQLAlchemyModelFactory):
 
 
 class RamFactory(SQLAlchemyModelFactory):
-    model = factory.Sequence(lambda x:x)
+    model = factory.Sequence(lambda x: str(x))
     capacity = 4
     price = 3.99
     total = 10
@@ -77,7 +77,7 @@ class RamFactory(SQLAlchemyModelFactory):
 
 
 class HdFactory(SQLAlchemyModelFactory):
-    model = factory.Sequence(lambda x:x)
+    model = factory.Sequence(lambda x: x)
     capacity = 100
     price = 3.99
     total = 10
@@ -87,7 +87,7 @@ class HdFactory(SQLAlchemyModelFactory):
 
 
 class OsFactory(SQLAlchemyModelFactory):
-    name = factory.Sequence(lambda x:x)
+    name = factory.Sequence(lambda x: x)
 
     class Meta:
         model = models.Os
@@ -97,8 +97,8 @@ class PlanFactory(SQLAlchemyModelFactory):
     id = factory.Sequence(lambda x: x)
     title = factory.Sequence(lambda x: str(x))
     price = factory.Sequence(lambda x: x)
-    duration_months =  factory.Sequence(lambda x: x)
-    cpu = factory.SubFactory(CpuFactory, model = factory.Sequence(lambda x:str(x)))
+    duration_months = factory.Sequence(lambda x: x)
+    cpu = factory.SubFactory(CpuFactory, model=factory.Sequence(lambda x: str(x)))
     os = factory.SubFactory(OsFactory)
     shop_description = factory.Sequence(lambda x: str(x))
 
@@ -109,7 +109,7 @@ class PlanFactory(SQLAlchemyModelFactory):
 
 class ServerFactory(SQLAlchemyModelFactory):
     id = factory.Sequence(lambda x: x)
-    cpu = factory.SubFactory(CpuFactory, model = factory.Sequence(lambda x:str(x)))
+    cpu = factory.SubFactory(CpuFactory, model=factory.Sequence(lambda x: str(x)))
     ram_slot_total = 10
     ram_max = 160
     gpu_slot_total = 10
@@ -118,11 +118,11 @@ class ServerFactory(SQLAlchemyModelFactory):
     class Meta:
         model = models.Server
 
+
 class ServerRamFactory(SQLAlchemyModelFactory):
     ram = factory.SubFactory(RamFactory)
-    quantity = 10
+    server = factory.SubFactory(ServerFactory)
+    quantity = factory.Sequence(lambda x: x)
 
     class Meta:
         model = models.ServerRam
-
-

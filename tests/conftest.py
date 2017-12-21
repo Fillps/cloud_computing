@@ -69,17 +69,21 @@ def user_data(session):
 def cpu_data(session):
     return factories.CpuFactory.create_batch(1)
 
+
 @pytest.fixture()
 def gpu_data(session):
     return factories.GpuFactory.create_batch(1)
+
 
 @pytest.fixture()
 def ram_data(session):
     return factories.RamFactory.create_batch(1)
 
+
 @pytest.fixture()
 def hd_data(session):
     return factories.HdFactory.create_batch(1)
+
 
 @pytest.fixture()
 def os_data(session):
@@ -90,9 +94,11 @@ def os_data(session):
 def plan_data(session):
     return factories.PlanFactory.create_batch(10)
 
+
 @pytest.fixture()
 def server_data(session):
     return factories.ServerFactory.create_batch(1)
+
 
 @pytest.fixture()
 def server_ram_data(session):
@@ -105,4 +111,4 @@ def api_url_data(session):
     return {
         'item': plans,
         'single_item_name': plans[0].title
-}
+    }
