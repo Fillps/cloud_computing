@@ -68,3 +68,8 @@ def test_credit_card_model(credit_card_data):
 def test_purchase_model(purchase_data):
     purchases = models.Purchase.query.all()
     assert len(purchases) == len(purchase_data)
+
+def test_user_plan_model(purchase_data):
+    purchases = models.Purchase.query.all()
+    purchase = purchases[0]
+    assert purchase.user_plan.user_id == purchase.credit_card.user_id

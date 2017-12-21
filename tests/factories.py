@@ -131,9 +131,9 @@ class ServerRamFactory(SQLAlchemyModelFactory):
 class CreditCardFactory(SQLAlchemyModelFactory):
     id = factory.Sequence(lambda x: x)
     number = factory.Sequence(lambda x: x)
-    user = factory.SubFactory(UserFactory, id=1500)
+    users = factory.SubFactory(UserFactory)
     name = factory.Sequence(lambda x: x)
-    exp_date = factory.Sequence(lambda x: x)
+    exp_date = datetime.datetime(day=1, month=6, year=2030)
     cvv = factory.Sequence(lambda x: x)
 
     class Meta:
