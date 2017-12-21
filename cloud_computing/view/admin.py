@@ -103,9 +103,6 @@ class PlanAdmin(AdminView):
                    'cpu', 'os', 'plan_gpus', 'plan_rams', 'plan_hds', 'is_public']
     column_searchable_list = ['title', 'auto_price', 'duration_months', 'duration_months', 'shop_description',
                               'is_public']
-    form_columns = ['title', 'auto_price', 'price', 'duration_months', 'cpu', 'gpu', 'ram',
-                    'hd', 'os', 'shop_description', 'thumbnail',
-                    'hero_image', 'is_public']
 
     form_columns = ['title', 'auto_price', 'price', 'duration_months', 'shop_description', 'thumbnail',
                     'hero_image', 'is_public', 'cpu', 'os', ]
