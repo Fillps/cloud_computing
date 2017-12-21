@@ -106,6 +106,15 @@ def server_ram_data(session):
 
 
 @pytest.fixture()
+def credit_card_data(session):
+    return factories.CreditCardFactory.create_batch(1)
+
+@pytest.fixture()
+def purchase_data(session):
+    return factories.PurchaseFactory.create_batch(1)
+
+
+@pytest.fixture()
 def api_url_data(session):
     plans = factories.PlanFactory.create_batch(2)
     return {

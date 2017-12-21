@@ -126,3 +126,27 @@ class ServerRamFactory(SQLAlchemyModelFactory):
 
     class Meta:
         model = models.ServerRam
+
+
+class CreditCardFactory(SQLAlchemyModelFactory):
+    id = factory.Sequence(lambda x: x)
+    number = factory.Sequence(lambda x: x)
+    user = factory.SubFactory(UserFactory, id=1500)
+    name = factory.Sequence(lambda x: x)
+    exp_date = factory.Sequence(lambda x: x)
+    cvv = factory.Sequence(lambda x: x)
+
+    class Meta:
+        model = models.CreditCard
+
+
+class PurchaseFactory(SQLAlchemyModelFactory):
+    id = factory.Sequence(lambda x: x)
+    user = factory.SubFactory(UserFactory)
+    credit_card = factory.SubFactory(CreditCardFactory)
+    plan = factory.SubFactory(PlanFactory)
+
+    class Meta:
+        model = models.Purchase
+
+
