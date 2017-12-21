@@ -103,7 +103,7 @@ class PurchaseUser(UserModelView):
         return super(PurchaseUser, self).get_query().filter(Purchase.user_id == current_user.id)
 
     def on_model_change(self, form, model, is_created):
-        model.user_id = current_user.id
+        model.user = current_user
 
 
 class CreditCardUser(UserModelView):

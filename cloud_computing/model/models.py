@@ -115,6 +115,22 @@ class Plan(db.Model):
             price += plan_gpu.quantity * plan_gpu.gpu.price * self.duration_months
         return price
 
+    def get_total_ram(self):
+        total_ram = 0
+        for ram in self.plan_rams:
+            total_ram += ram.quantity * ram.ram.capacity
+        return total_ram
+
+    def get_total_hd_ssd(self):
+        total_hd = 0
+        total_ssd = 0
+        for hd in self.plan_hds:
+            if hd.hd.is_ssd is True:
+                total_ssd += hd.quantity * hd.hd.capacity
+            else:
+                total_hd += hd.quantity * hd.hd.capacity
+        return total_hd, total_ssd
+
     def available_servers(self, only_one=False, server_id=None):
         """
         :param only_one: when True finds only one server.
@@ -124,16 +140,9 @@ class Plan(db.Model):
                 when only_one is False returns a list of available servers
                 when there is no server available, returns None.
         """
-        total_ram = 0
-        for ram in self.plan_rams:
-            total_ram += ram.quantity * ram.ram.capacity
-        total_hd = 0
-        total_ssd = 0
-        for hd in self.plan_hds:
-            if hd.hd.is_ssd is True:
-                total_ssd += hd.quantity * hd.hd.capacity
-            else:
-                total_hd += hd.quantity * hd.hd.capacity
+        total_ram = self.get_total_ram()
+
+        total_hd, total_ssd = self.get_total_hd_ssd()
 
         if server_id is None:
             servers = Server.query.filter(Server.cores_available >= self.cpu.cores,
@@ -163,7 +172,7 @@ class Plan(db.Model):
                     # testa se a freq é a mesma e a capacidade é maior ou igual,
                     # levando em consideração se a gpu já foi usada antes
                     if server_gpu.gpu.frequency == plan_gpu.gpu.frequency and \
-                       server_gpu.available_capacity >= plan_gpu.quantity * plan_gpu.gpu.ram + used_gpus[
+                                    server_gpu.available_capacity >= plan_gpu.quantity * plan_gpu.gpu.ram + used_gpus[
                                 server_gpu.gpu_model]:
                         # remove a gpu da lista para nao passar na proxima gpu do servidor
                         plan_gpus.remove(plan_gpu)
@@ -401,7 +410,7 @@ def purchase_after_insert(maper, connection, target):
             connection.execute(Server.__table__.update()
                                .where(Server.__table__.c.id == server.id)
                                .values(cores_available=server.cores_available - plan.cpu.cores,
-                                       ram_available=server.ram_avgailable - total_ram,
+                                       ram_available=server.ram_available - total_ram,
                                        hd_available=server.hd_available - total_hd,
                                        ssd_available=server.ssd_available - total_ssd))
             for gpu in server.server_gpus:
@@ -413,9 +422,9 @@ def purchase_after_insert(maper, connection, target):
 
             user_plan = UserPlan(user_id=target.user_id,
                                  plan_id=target.plan_id,
-                                 first_purchase_id=target.id,
                                  server_id=server.id)
             user_plan.end_date = add_months(datetime.datetime.now(), target.plan.duration_months)
+            user_plan.purchases.append(target)
             session.add(user_plan)
         else:
             connection.execute(UserPlan.__table__.update()
@@ -811,7 +820,6 @@ class UserPlan(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     plan_id = db.Column(db.Integer, db.ForeignKey('plan.id'), nullable=False)
-    first_purchase_id = db.Column(db.Integer, db.ForeignKey('purchase.id'), nullable=False)
     server_id = db.Column(db.Integer, db.ForeignKey('server.id'))
     start_date = db.Column(db.DateTime, default=func.now())
     end_date = db.Column(db.DateTime, default=func.now())
@@ -840,24 +848,17 @@ class UserPlan(db.Model):
                 # percorre todas as GPUs do plano
                 for plan_gpu in plan.plan_gpus:
                     # verifica se a GPU ja foi liberada antes, se não coloca o valor da utiliazaão dela pra zero
-                    if server_gpu.gpu_model not in used_gpus:
-                        used_gpus[server_gpu.gpu_model] = 0
+                    if server_gpu.gpu_model not in free_gpus:
+                        free_gpus[server_gpu.gpu_model] = 0
                     # testa se a freq é a mesma e a capacidade é maior ou igual,
                     # levando em consideração se a gpu já foi liberada antes
                     if server_gpu.gpu.frequency == plan_gpu.gpu.frequency and \
-                       server_gpu.total_capacity - used_gpus[server_gpu.gpu_model] >= \
-                       plan_gpu.quantity * plan_gpu.gpu.ram:
+                                            server_gpu.total_capacity - free_gpus[server_gpu.gpu_model] >= \
+                                            plan_gpu.quantity * plan_gpu.gpu.ram:
                         # incrementa a utilização da gpu do servidor
                         server_gpu.available_capacity += plan_gpu.quantity * plan_gpu.gpu.ram
-                        used_gpus[server_gpu.gpu_model] += plan_gpu.quantity * plan_gpu.gpu.ram
+                        free_gpus[server_gpu.gpu_model] += plan_gpu.quantity * plan_gpu.gpu.ram
         return value
-
-
-@event.listens_for(UserPlan, 'after_insert')
-def purchase_after_insert(maper, connection, target):
-    connection.execute(Purchase.__table__.update()
-                       .where(Purchase.__table__.c.id == target.first_purchase_id)
-                       .values(user_plan_id=target.id))
 
 
 class UserPlanStats(db.Model):
