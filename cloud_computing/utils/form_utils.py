@@ -8,6 +8,7 @@ from wtforms.widgets import TextArea
 
 class CKTextAreaWidget(TextArea):
     """Rich text editor for resource requests."""
+
     def __call__(self, field, **kwargs):
         if kwargs.get('class'):
             kwargs['class'] += ' ckeditor'
@@ -30,6 +31,7 @@ class ReadonlyCKTextAreaField(CKTextAreaField):
 
 class ReadOnlyIntegerField(IntegerField):
     """Read-only integer field."""
+
     def __call__(self, *args, **kwargs):
         kwargs.setdefault('readOnly', True)
         return super(IntegerField, self).__call__(*args, **kwargs)

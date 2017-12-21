@@ -11,7 +11,6 @@ from sqlalchemy.orm import validates, Session
 from cloud_computing.model.database import db, whooshee
 from cloud_computing.utils.form_utils import add_months
 
-
 # Create a table to support many-to-many relationship between Users and Roles
 roles_users = db.Table(
     'roles_users',
@@ -61,7 +60,7 @@ class User(db.Model, UserMixin):
 class Plan(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.Text, unique=True, default='Customizado')
-    price = db.Column(db.Float(), nullable=False)
+    price = db.Column(db.Float(), default=0, nullable=False)
     duration_months = db.Column(db.Integer, nullable=False)
     cpu_model = db.Column(db.Text, db.ForeignKey('cpu.model'), nullable=False)
     os_name = db.Column(db.Text, db.ForeignKey('os.name'), nullable=False)
@@ -116,6 +115,77 @@ class Plan(db.Model):
             price += plan_gpu.quantity * plan_gpu.gpu.price * self.duration_months
         return price
 
+    def get_total_ram(self):
+        total_ram = 0
+        for ram in self.plan_rams:
+            total_ram += ram.quantity * ram.ram.capacity
+        return total_ram
+
+    def get_total_hd_ssd(self):
+        total_hd = 0
+        total_ssd = 0
+        for hd in self.plan_hds:
+            if hd.hd.is_ssd is True:
+                total_ssd += hd.quantity * hd.hd.capacity
+            else:
+                total_hd += hd.quantity * hd.hd.capacity
+        return total_hd, total_ssd
+
+    def available_servers(self, only_one=False, server_id=None):
+        """
+        :param only_one: when True finds only one server.
+        :param server_id: search only the specified server
+        :return: when only_one is True returns the server found and the used
+                        resources(used_gpus, total_ram, total_hd, total_ssd)
+                when only_one is False returns a list of available servers
+                when there is no server available, returns None.
+        """
+        total_ram = self.get_total_ram()
+
+        total_hd, total_ssd = self.get_total_hd_ssd()
+
+        if server_id is None:
+            servers = Server.query.filter(Server.cores_available >= self.cpu.cores,
+                                          Server.ram_available >= total_ram,
+                                          Server.hd_available >= total_hd,
+                                          Server.ssd_available >= total_ssd,
+                                          Server.os_name == self.os_name)
+        else:
+            servers = Server.query.filter(Server.cores_available >= self.cpu.cores,
+                                          Server.ram_available >= total_ram,
+                                          Server.hd_available >= total_hd,
+                                          Server.ssd_available >= total_ssd,
+                                          Server.os_name == self.os_name,
+                                          Server.id == server_id)
+        available_servers = []
+        # percorre todos os servidores
+        for server in servers:
+            plan_gpus = list(self.plan_gpus)
+            used_gpus = {}
+            # percorre todas as GPUs do servidor
+            for server_gpu in server.server_gpus:
+                # percorre todas as GPUs do plano
+                for plan_gpu in self.plan_gpus:
+                    # verifica se a GPU ja foi usada antes, se não coloca o valor da utiliazaão dela pra zero
+                    if server_gpu.gpu_model not in used_gpus:
+                        used_gpus[server_gpu.gpu_model] = 0
+                    # testa se a freq é a mesma e a capacidade é maior ou igual,
+                    # levando em consideração se a gpu já foi usada antes
+                    if server_gpu.gpu.frequency == plan_gpu.gpu.frequency and \
+                                    server_gpu.available_capacity >= plan_gpu.quantity * plan_gpu.gpu.ram + used_gpus[
+                                server_gpu.gpu_model]:
+                        # remove a gpu da lista para nao passar na proxima gpu do servidor
+                        plan_gpus.remove(plan_gpu)
+                        # incrementa a utilização da gpu do servidor
+                        used_gpus[server_gpu.gpu_model] += plan_gpu.quantity * plan_gpu.gpu.ram
+            if len(plan_gpus) == 0 and only_one is True:
+                return server, used_gpus, total_ram, total_hd, total_ssd
+            elif len(plan_gpus) == 0:
+                available_servers.append(server)
+        if len(available_servers) == 0:
+            return None
+        return available_servers
+
 
 @event.listens_for(Plan, 'after_insert')
 def plan_after_insert(maper, connection, target):
@@ -126,7 +196,7 @@ def plan_after_insert(maper, connection, target):
         values['price'] = target.calculate_price()
     if values:
         connection.execute(Plan.__table__.update()
-                           .where(Plan.__table__.c.id==target.id)
+                           .where(Plan.__table__.c.id == target.id)
                            .values(**values))
 
 
@@ -223,6 +293,16 @@ class PlanGpu(db.Model, PlanResource):
     gpu_model = db.Column(db.Text, db.ForeignKey('gpu.model'), primary_key=True)
     gpu = db.relationship('Gpu', backref=db.backref('plan_gpu'))
 
+    def __str__(self):
+        return self.gpu.model + ' x ' + str(self.quantity)
+
+    @validates('gpu')
+    def update_gpu(self, key, value):
+        if self.gpu is None or self.gpu == value:
+            return value
+        raise ValidationError("Não é possível alterar o modelo da GPU. "
+                              "Delete esse componente e crie outro.")
+
 
 class PlanRam(db.Model, PlanResource):
     backref_plan = 'plan_rams'
@@ -230,12 +310,32 @@ class PlanRam(db.Model, PlanResource):
     ram_model = db.Column(db.Text, db.ForeignKey('ram.model'), primary_key=True)
     ram = db.relationship('Ram', backref=db.backref('plan_ram'))
 
+    def __str__(self):
+        return self.ram.model + ' x ' + str(self.quantity)
+
+    @validates('ram')
+    def update_ram(self, key, value):
+        if self.ram is None or self.ram == value:
+            return value
+        raise ValidationError("Não é possível alterar o modelo da RAM. "
+                              "Delete esse componente e crie outro.")
+
 
 class PlanHd(db.Model, PlanResource):
     backref_plan = 'plan_hds'
 
     hd_model = db.Column(db.Text, db.ForeignKey('hd.model'), primary_key=True)
     hd = db.relationship('Hd', backref=db.backref('plan_hd'))
+
+    def __str__(self):
+        return self.hd.model + ' x ' + str(self.quantity)
+
+    @validates('hd')
+    def update_hd(self, key, value):
+        if self.hd is None or self.hd == value:
+            return value
+        raise ValidationError("Não é possível alterar o modelo do HD. "
+                              "Delete esse componente e crie outro.")
 
 
 @event.listens_for(PlanGpu, 'after_insert')
@@ -291,17 +391,45 @@ class Purchase(db.Model):
     user_plan = db.relationship('UserPlan', backref=db.backref('purchases'), foreign_keys=[user_plan_id])
 
 
-@event.listens_for(Purchase, 'before_insert')
-def purchase_before_insert(maper, connection, target):
-    """Creates or updates a UserPlan and updates the end_date by the plan duration_months."""
-    if target.user_plan is None:
-        user_plan = UserPlan(user=target.user, plan=target.plan)
-        user_plan.end_date = add_months(datetime.datetime.now(), target.plan.duration_months)
-        target.user_plan = user_plan
-    else:
-        connection.execute(UserPlan.__table__.update()
-                           .where(UserPlan.__table__.c.id == target.user_plan.id)
-                           .values(end_date=add_months(target.user_plan.end_date, target.plan.duration_months)))
+@event.listens_for(Purchase, 'after_insert')
+def purchase_after_insert(maper, connection, target):
+    """Creates or updates a UserPlan and updates the end_date by the plan duration_months.
+        If is a new UserPlan, finds a server compatible with the plan and set the server in use."""
+
+    @event.listens_for(Session, "after_flush", once=True)
+    def receive_after_flush(session, context):
+
+        if target.user_plan_id is None:
+            plan = Plan.query.filter_by(id=target.plan_id).first()
+            available_server = plan.available_servers(only_one=True)
+            if available_server is None:
+                raise ValidationError("Não existe servidor disponível para este plano. Mande um pedido "
+                                      "de recurso para os administradores ou compre outro plano")
+
+            server, used_gpus, total_ram, total_hd, total_ssd = available_server
+            connection.execute(Server.__table__.update()
+                               .where(Server.__table__.c.id == server.id)
+                               .values(cores_available=server.cores_available - plan.cpu.cores,
+                                       ram_available=server.ram_available - total_ram,
+                                       hd_available=server.hd_available - total_hd,
+                                       ssd_available=server.ssd_available - total_ssd))
+            for gpu in server.server_gpus:
+                if gpu.gpu_model in used_gpus and used_gpus[gpu.gpu_model] > 0:
+                    connection.execute(ServerGpu.__table__.update()
+                                       .where(ServerGpu.__table__.c.server_id == server.id and
+                                              ServerGpu.__table__.c.gpu_model == gpu.gpu_model)
+                                       .values(available_capacity=gpu.available_capacity - used_gpus[gpu.gpu_model]))
+
+            user_plan = UserPlan(user_id=target.user_id,
+                                 plan_id=target.plan_id,
+                                 server_id=server.id)
+            user_plan.end_date = add_months(datetime.datetime.now(), target.plan.duration_months)
+            user_plan.purchases.append(target)
+            session.add(user_plan)
+        else:
+            connection.execute(UserPlan.__table__.update()
+                               .where(UserPlan.__table__.c.id == target.user_plan_id)
+                               .values(end_date=add_months(target.user_plan.end_date, target.plan.duration_months)))
 
 
 class Server(db.Model):
@@ -364,6 +492,25 @@ class Server(db.Model):
             self.__setattr__(available, available_value + value - old_value)
         return value
 
+    @validates('user_plans')
+    def user_plans_update(self, key, value):
+        """When a user_plan is updated(server_id is changed),
+           set all plan resources in use."""
+        usage = value.plan.available_servers(only_one=True, server_id=self.id)
+        if usage is None:
+            raise ValidationError("Esse servidor não é compativel com esse plano.")
+        server, used_gpus, total_ram, total_hd, total_ssd = usage
+
+        self.cores_available -= value.plan.cpu.cores
+        self.ram_available -= total_ram
+        self.hd_available -= total_hd
+        self.ssd_available -= total_ssd
+
+        for gpu in self.server_gpus:
+            if gpu.gpu_model in used_gpus and used_gpus[gpu.gpu_model] > 0:
+                gpu.available_capacity -= used_gpus[gpu.gpu_model]
+        return value
+
 
 @event.listens_for(Server, 'before_insert')
 def server_before_insert(maper, connection, target):
@@ -394,6 +541,16 @@ class ServerGpu(db.Model, ServerResource):
 
     gpu = db.relationship('Gpu', backref=db.backref(backref_plan))
 
+    def __str__(self):
+        return '%s x%s(%s/%s)' % (self.gpu.model, self.quantity, self.available_capacity, self.total_capacity)
+
+    @validates('gpu')
+    def update_gpu(self, key, value):
+        if self.gpu is None or self.gpu == value:
+            return value
+        raise ValidationError("Não é possível alterar o modelo da GPU. "
+                              "Delete esse componente e crie outro.")
+
     @validates('quantity')
     def update_quantity(self, key, value):
         """
@@ -402,7 +559,7 @@ class ServerGpu(db.Model, ServerResource):
         """
         if value < 0:
             raise ValidationError('A quantidade precisa ser maior que zero.')
-        elif self.server_id is None:
+        elif self.quantity is None:
             return value
         elif self.gpu.available < value - self.quantity:
             raise ValidationError(
@@ -411,7 +568,7 @@ class ServerGpu(db.Model, ServerResource):
             raise ValidationError(
                 "Não existem slots disponíveis. Tente diminuir a quantidade de recursos.")
 
-        net_capacity = self.gpu.ram * value - self.gpu.ram * self.quantity
+        net_capacity = self.gpu.ram * (value - self.quantity)
 
         if self.available_capacity + net_capacity < 0:
             raise ValidationError(
@@ -457,7 +614,7 @@ def server_gpu_before_delete(maper, connection, target):
     else:
         connection.execute(Server.__table__.update()
                            .where(Server.__table__.c.id == target.server_id)
-                           .values(gpu_slot_available=target.server.ram_slots_available + target.quantity))
+                           .values(gpu_slot_available=target.server.ram_slot_available + target.quantity))
         connection.execute(Gpu.__table__.update()
                            .where(Gpu.__table__.c.model == target.gpu_model)
                            .values(available=target.gpu.available + target.quantity))
@@ -468,6 +625,16 @@ class ServerRam(db.Model, ServerResource):
     ram_model = db.Column(db.Text, db.ForeignKey('ram.model'), primary_key=True)
     ram = db.relationship('Ram', backref=db.backref(backref_plan))
 
+    def __str__(self):
+        return self.ram.model + ' x ' + str(self.quantity)
+
+    @validates('ram')
+    def update_ram(self, key, value):
+        if self.ram is None or self.ram == value:
+            return value
+        raise ValidationError("Não é possível alterar o modelo da RAM. "
+                              "Delete esse componente e crie outro.")
+
     @validates('quantity')
     def update_quantity(self, key, value):
         """When quantity is updated, updates the server.ram_total,
@@ -475,7 +642,7 @@ class ServerRam(db.Model, ServerResource):
         """
         if value < 0:
             raise ValidationError('A quantidade precisa ser maior que zero.')
-        elif self.server_id is None:
+        elif self.quantity is None:
             return value
         elif self.ram.available < value - self.quantity:
             raise ValidationError(
@@ -549,6 +716,16 @@ class ServerHd(db.Model, ServerResource):
     hd_model = db.Column(db.Text, db.ForeignKey('hd.model'), primary_key=True)
     hd = db.relationship('Hd', backref=db.backref(backref_plan))
 
+    def __str__(self):
+        return self.hd.model + ' x ' + str(self.quantity)
+
+    @validates('hd')
+    def update_hd(self, key, value):
+        if self.hd is None or self.hd == value:
+            return value
+        raise ValidationError("Não é possível alterar o modelo do HD. "
+                              "Delete esse componente e crie outro.")
+
     @validates('quantity')
     def update_quantity(self, key, value):
         """ When quantity is updated, updates the server.hd_total,
@@ -557,7 +734,7 @@ class ServerHd(db.Model, ServerResource):
         """
         if value < 0:
             raise ValidationError('A quantidade precisa ser maior que zero.')
-        elif self.server_id is None:
+        elif self.quantity is None:
             return value
         elif self.hd.available < value - self.quantity:
             raise ValidationError(
@@ -651,9 +828,37 @@ class UserPlan(db.Model):
     user = db.relationship('User', backref=db.backref('user_plan'))
     server = db.relationship('Server', backref=db.backref('user_plans'))
 
-
-
-
+    @validates('server')
+    def update_server(self, key, value):
+        """When the user_plans updates, free all resources in the old server."""
+        if self.server == value:
+            return value
+        plan = Plan.query.filter_by(id=self.plan_id).first()
+        available_server = plan.available_servers(only_one=True, server_id=value.id)
+        if available_server is None:
+            raise ValidationError("Esse servidor não esta disponível.")
+        server, used_gpus, total_ram, total_hd, total_ssd = available_server
+        if self.server_id is not None:
+            self.server.cores_available += plan.cpu.cores
+            self.server.ram_available += total_ram
+            self.server.hd_available += total_hd
+            self.server.ssd_available += total_ssd
+            free_gpus = {}
+            for server_gpu in self.server.server_gpus:
+                # percorre todas as GPUs do plano
+                for plan_gpu in plan.plan_gpus:
+                    # verifica se a GPU ja foi liberada antes, se não coloca o valor da utiliazaão dela pra zero
+                    if server_gpu.gpu_model not in free_gpus:
+                        free_gpus[server_gpu.gpu_model] = 0
+                    # testa se a freq é a mesma e a capacidade é maior ou igual,
+                    # levando em consideração se a gpu já foi liberada antes
+                    if server_gpu.gpu.frequency == plan_gpu.gpu.frequency and \
+                                            server_gpu.total_capacity - free_gpus[server_gpu.gpu_model] >= \
+                                            plan_gpu.quantity * plan_gpu.gpu.ram:
+                        # incrementa a utilização da gpu do servidor
+                        server_gpu.available_capacity += plan_gpu.quantity * plan_gpu.gpu.ram
+                        free_gpus[server_gpu.gpu_model] += plan_gpu.quantity * plan_gpu.gpu.ram
+        return value
 
 
 class UserPlanStats(db.Model):
